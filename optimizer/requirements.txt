@@ -1,0 +1,8 @@
+﻿# Member 2 — Crop Optimization Dependencies
+scipy
+numpy
+qiskit
+qiskit-optimization
+pytest
+
+qiskit-algorithms
