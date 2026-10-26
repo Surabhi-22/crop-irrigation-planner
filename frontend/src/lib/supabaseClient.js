@@ -69,9 +69,22 @@ export async function signInWithEmail(email, password) {
 /**
  * Create a new account with email + password.
  */
-export async function signUpWithEmail(email, password) {
+export async function signUpWithEmail(email, password, options = {}) {
   if (!supabase) return NOT_CONFIGURED_ERROR;
-  return supabase.auth.signUp({ email, password });
+
+  const emailRedirectTo =
+    options.emailRedirectTo ||
+    env.VITE_APP_URL?.trim() ||
+    (typeof window !== "undefined" ? window.location.origin : "");
+
+  return supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      emailRedirectTo,
+      ...options,
+    },
+  });
 }
 
 /**

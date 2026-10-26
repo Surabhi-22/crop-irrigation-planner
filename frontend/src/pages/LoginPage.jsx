@@ -117,7 +117,14 @@ export default function LoginPage({
           {displayError && (
             <div className="auth-error-banner" role="alert">
               <span className="material-symbols-outlined">error</span>
-              <span>{displayError}</span>
+              <div style={{ flex: 1 }}>
+                <span>{displayError}</span>
+                {displayError.toLowerCase().includes("invalid login credentials") && (
+                  <p style={{ margin: "6px 0 0 0", fontSize: "0.85rem", opacity: 0.95, lineHeight: 1.4 }}>
+                    If you originally signed up with Google, use <strong>Continue with Google</strong> below. If you created an account with email, verify you clicked the confirmation link sent to your inbox.
+                  </p>
+                )}
+              </div>
             </div>
           )}
 
@@ -141,6 +148,7 @@ export default function LoginPage({
                   onChange={(e) => {
                     setEmail(e.target.value);
                     setFieldErrors((p) => ({ ...p, email: "" }));
+                    setError("");
                   }}
                   aria-describedby={fieldErrors.email ? "login-email-err" : undefined}
                   aria-invalid={!!fieldErrors.email}
@@ -181,6 +189,7 @@ export default function LoginPage({
                   onChange={(e) => {
                     setPassword(e.target.value);
                     setFieldErrors((p) => ({ ...p, password: "" }));
+                    setError("");
                   }}
                   aria-describedby={fieldErrors.password ? "login-pw-err" : undefined}
                   aria-invalid={!!fieldErrors.password}
@@ -275,11 +284,11 @@ export default function LoginPage({
           </p>
 
           <div className="auth-legal-links">
-            <a href="/privacy.html" target="_blank" rel="noopener noreferrer">
+            <a href="/privacy" target="_blank" rel="noopener noreferrer">
               Privacy Policy
             </a>
             <span className="auth-legal-divider">•</span>
-            <a href="/terms.html" target="_blank" rel="noopener noreferrer">
+            <a href="/terms" target="_blank" rel="noopener noreferrer">
               Terms of Service
             </a>
           </div>

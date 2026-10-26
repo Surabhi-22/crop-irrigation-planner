@@ -8,6 +8,7 @@
 
 import { useState } from "react";
 import { signUpWithEmail, signInWithGoogle } from "../lib/supabaseClient";
+import { validateSignupInput, classifySignupResult } from "../lib/authUtils";
 
 export default function SignupPage({
   onNavigateToLogin,
@@ -26,20 +27,6 @@ export default function SignupPage({
   const [fieldErrors, setFieldErrors] = useState({});
 
   const displayError = error || oauthError;
-
-  function validate() {
-    const errs = {};
-    if (!email.trim()) errs.email = "Email is required.";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()))
-      errs.email = "Enter a valid email address.";
-    if (!password) errs.password = "Password is required.";
-    else if (password.length < 8)
-      errs.password = "Password must be at least 8 characters.";
-    if (!confirm) errs.confirm = "Please confirm your password.";
-    else if (password && confirm && password !== confirm)
-      errs.confirm = "Passwords do not match.";
-    return errs;
-  }
 
   // Password strength indicator
   function getStrength(pw) {
@@ -60,27 +47,31 @@ export default function SignupPage({
     e.preventDefault();
     setError("");
     setSuccess("");
-    const errs = validate();
-    setFieldErrors(errs);
-    if (Object.keys(errs).length > 0) return;
+
+    const validation = validateSignupInput({ email, password, confirm });
+    setFieldErrors(validation.errors);
+    if (!validation.isValid) return;
 
     setLoading(true);
     try {
-      const { data, error: authError } = await signUpWithEmail(
-        email.trim(),
-        password
-      );
-      if (authError) {
-        setError(authError.message);
-      } else if (data?.session) {
+      const response = await signUpWithEmail(email.trim(), password);
+      const outcome = classifySignupResult(response);
+
+      if (outcome.status === "duplicate_email") {
+        setError(outcome.message);
+      } else if (outcome.status === "rate_limited") {
+        setError(outcome.message);
+      } else if (outcome.status === "error") {
+        setError(outcome.message);
+      } else if (outcome.status === "success_session") {
         // Immediately signed in (email confirmation disabled in Supabase)
         onAuthSuccess?.();
-      } else {
-        // Email confirmation required
-        setSuccess(
-          "Account created! Check your email for a confirmation link before signing in."
-        );
+      } else if (outcome.status === "confirmation_required") {
+        // Genuine new account created with confirmation email pending
+        setSuccess(outcome.message);
       }
+    } catch (err) {
+      setError(err?.message || "An unexpected error occurred during signup.");
     } finally {
       setLoading(false);
     }
@@ -146,14 +137,36 @@ export default function SignupPage({
           {displayError && (
             <div className="auth-error-banner" role="alert">
               <span className="material-symbols-outlined">error</span>
-              <span>{displayError}</span>
+              <div style={{ flex: 1 }}>
+                <span>{displayError}</span>
+                {displayError.toLowerCase().includes("already exists") && (
+                  <button
+                    type="button"
+                    className="auth-link"
+                    style={{ display: "block", marginTop: "6px", fontWeight: 600 }}
+                    onClick={onNavigateToLogin}
+                  >
+                    Go to Sign In &rarr;
+                  </button>
+                )}
+              </div>
             </div>
           )}
 
           {success && (
             <div className="auth-success-banner" role="status">
               <span className="material-symbols-outlined">mark_email_read</span>
-              <span>{success}</span>
+              <div style={{ flex: 1 }}>
+                <p style={{ margin: 0, fontWeight: 500 }}>{success}</p>
+                <button
+                  type="button"
+                  className="auth-link"
+                  style={{ marginTop: "8px", display: "inline-block" }}
+                  onClick={onNavigateToLogin}
+                >
+                  Proceed to Sign In &rarr;
+                </button>
+              </div>
             </div>
           )}
 
@@ -177,6 +190,7 @@ export default function SignupPage({
                   onChange={(e) => {
                     setEmail(e.target.value);
                     setFieldErrors((p) => ({ ...p, email: "" }));
+                    setError("");
                   }}
                   aria-describedby={fieldErrors.email ? "signup-email-err" : undefined}
                   aria-invalid={!!fieldErrors.email}
@@ -208,6 +222,7 @@ export default function SignupPage({
                   onChange={(e) => {
                     setPassword(e.target.value);
                     setFieldErrors((p) => ({ ...p, password: "" }));
+                    setError("");
                   }}
                   aria-describedby="signup-strength"
                   aria-invalid={!!fieldErrors.password}
@@ -265,6 +280,7 @@ export default function SignupPage({
                   onChange={(e) => {
                     setConfirm(e.target.value);
                     setFieldErrors((p) => ({ ...p, confirm: "" }));
+                    setError("");
                   }}
                   aria-describedby={fieldErrors.confirm ? "signup-confirm-err" : undefined}
                   aria-invalid={!!fieldErrors.confirm}
@@ -359,11 +375,11 @@ export default function SignupPage({
           </p>
 
           <div className="auth-legal-links">
-            <a href="/privacy.html" target="_blank" rel="noopener noreferrer">
+            <a href="/privacy" target="_blank" rel="noopener noreferrer">
               Privacy Policy
             </a>
             <span className="auth-legal-divider">•</span>
-            <a href="/terms.html" target="_blank" rel="noopener noreferrer">
+            <a href="/terms" target="_blank" rel="noopener noreferrer">
               Terms of Service
             </a>
           </div>

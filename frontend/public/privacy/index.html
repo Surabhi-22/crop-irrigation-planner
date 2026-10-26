@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Privacy Policy — Quantum Agri</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --primary: #10b981;
+      --primary-dark: #059669;
+      --bg: #090d16;
+      --surface: #111827;
+      --border: #1f2937;
+      --text: #f3f4f6;
+      --text-muted: #9ca3af;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+      padding: 40px 20px;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 40px;
+    }
+    .header {
+      margin-bottom: 32px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 24px;
+    }
+    .brand {
+      color: var(--primary);
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: #fff;
+    }
+    .effective-date {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+    h2 {
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: #fff;
+      margin-top: 28px;
+      margin-bottom: 12px;
+    }
+    p, ul {
+      color: var(--text-muted);
+      margin-bottom: 16px;
+      font-size: 0.95rem;
+    }
+    ul {
+      padding-left: 24px;
+    }
+    li {
+      margin-bottom: 8px;
+    }
+    a {
+      color: var(--primary);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    .footer {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="brand">Quantum Agri</div>
+      <h1>Privacy Policy</h1>
+      <p class="effective-date">Effective Date: October 26, 2026</p>
+    </div>
+
+    <h2>1. Introduction</h2>
+    <p>
+      Welcome to <strong>Quantum Agri</strong> (&ldquo;we&rdquo;, &ldquo;our&rdquo;, or &ldquo;us&rdquo;). Quantum Agri provides intelligent agricultural planning tools, crop feasibility analysis, and smart irrigation optimization for farmers and agricultural professionals.
+    </p>
+    <p>
+      This Privacy Policy describes how we collect, use, and protect your information when you visit and use our application at <a href="https://crop-irrigation-planner.vercel.app">https://crop-irrigation-planner.vercel.app</a>.
+    </p>
+
+    <h2>2. Information We Collect</h2>
+    <p>We collect minimal information necessary to deliver and personalize our agricultural services:</p>
+    <ul>
+      <li><strong>Account Credentials & Authentication:</strong> When you sign in with Google OAuth or email, we receive your email address, display name, and unique authentication identifier provided by Google via Supabase Auth.</li>
+      <li><strong>Farm & Planning Parameters:</strong> Details you provide regarding your farm (e.g. land area in acres, soil type, expected rainfall, water availability in cubic meters, location, season, and working budget) to evaluate crop feasibility and generate irrigation recommendations.</li>
+      <li><strong>Usage & Technical Data:</strong> Basic browser telemetry, IP addresses, and session state necessary for secure authentication and application performance.</li>
+    </ul>
+
+    <h2>3. How We Use Your Information</h2>
+    <p>Your information is used strictly to:</p>
+    <ul>
+      <li>Authenticate your identity and maintain your secure session.</li>
+      <li>Save and synchronize your farm configurations and custom crop planning scenarios.</li>
+      <li>Run algorithmic crop feasibility and water optimization models based on your inputs.</li>
+      <li>Improve application stability, security, and user experience.</li>
+    </ul>
+
+    <h2>4. Google User Data (OAuth)</h2>
+    <p>
+      Quantum Agri uses Google OAuth exclusively for user authentication. We request access only to basic profile information (email address, full name, and avatar). We do <strong>not</strong> access your contacts, Google Drive, emails, or any other personal Google data. We never sell, lease, or share your Google user data with third-party advertisers or data brokers.
+    </p>
+
+    <h2>5. Data Storage and Security</h2>
+    <p>
+      User authentication and account data are securely stored using industry-standard encrypted databases hosted by Supabase. All data transmissions between your browser and our servers are encrypted in transit using Transport Layer Security (TLS/HTTPS).
+    </p>
+
+    <h2>6. Third-Party Services</h2>
+    <p>We work with trusted infrastructure providers to operate the application:</p>
+    <ul>
+      <li><strong>Supabase:</strong> For identity management, authentication, and secure database services.</li>
+      <li><strong>Vercel:</strong> For secure frontend hosting and content delivery.</li>
+      <li><strong>Render:</strong> For secure backend API compute infrastructure.</li>
+    </ul>
+
+    <h2>7. Your Data Rights</h2>
+    <p>
+      You have the right to access, update, or request the deletion of your account and farm data at any time. If you wish to delete your account or revoke Google OAuth permissions, you can do so directly from your Google Account settings or by contacting us.
+    </p>
+
+    <h2>8. Contact Us</h2>
+    <p>
+      If you have questions or concerns regarding this Privacy Policy, please contact our support team at <a href="mailto:surabhichourasiya422@gmail.com">surabhichourasiya422@gmail.com</a>.
+    </p>
+
+    <div class="footer">
+      <span>&copy; 2026 Quantum Agri. All rights reserved.</span>
+      <div>
+        <a href="/">Home</a> &bull;
+        <a href="/terms">Terms of Service</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -90,6 +90,7 @@
       color: var(--text-muted);
       display: flex;
       justify-content: space-between;
+      align-items: center;
     }
   </style>
 </head>
@@ -113,7 +114,7 @@
     <p>We collect minimal information necessary to deliver and personalize our agricultural services:</p>
     <ul>
       <li><strong>Account Credentials & Authentication:</strong> When you sign in with Google OAuth or email, we receive your email address, display name, and unique authentication identifier provided by Google via Supabase Auth.</li>
-      <li><strong>Farm & Planning Parameters:</strong> Details you provide regarding your farm (e.g. land area, soil type, rainfall expectations, water availability, and budget) to generate crop and irrigation recommendations.</li>
+      <li><strong>Farm & Planning Parameters:</strong> Details you provide regarding your farm (e.g. land area in acres, soil type, expected rainfall, water availability in cubic meters, location, season, and working budget) to evaluate crop feasibility and generate irrigation recommendations.</li>
       <li><strong>Usage & Technical Data:</strong> Basic browser telemetry, IP addresses, and session state necessary for secure authentication and application performance.</li>
     </ul>
 
@@ -156,7 +157,10 @@
 
     <div class="footer">
       <span>&copy; 2026 Quantum Agri. All rights reserved.</span>
-      <a href="/terms.html">Terms of Service</a>
+      <div>
+        <a href="/">Home</a> &bull;
+        <a href="/terms">Terms of Service</a>
+      </div>
     </div>
   </div>
 </body>

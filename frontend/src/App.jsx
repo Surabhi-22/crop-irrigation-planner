@@ -744,7 +744,6 @@ function App() {
             } catch {
               // ignore
             }
-            setAuthView("login");
           }}
           oauthError={authError}
         />

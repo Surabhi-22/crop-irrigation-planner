@@ -23,6 +23,7 @@ class Settings(BaseSettings):
             "http://127.0.0.1:5174",
             "http://localhost:4173",
             "http://127.0.0.1:4173",
+            "https://crop-irrigation-planner.vercel.app",
         ]
         # Append any production origins configured via environment variable
         if self.CORS_ORIGINS_EXTRA:
