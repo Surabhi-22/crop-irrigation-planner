@@ -1,0 +1,52 @@
+{
+  "model_name": "crop_market_price_random_forest",
+  "features": [
+    "commodity_name",
+    "year",
+    "month_num"
+  ],
+  "target": "avg_modal_price",
+  "price_unit_notes": "Reported values align standardly with INR per Quintal (100 kg) for major field crops (Maize, Wheat, Rice, Cotton, Groundnut, etc.) according to Agmarknet norms. Sugarcane has been strictly excluded from model training and evaluation due to unverified mixed units (Rs 7 to 33,000).",
+  "sugarcane_status": "EXCLUDED from price-model training; price prediction returns None with unsupported_price_unit.",
+  "split_year": 2022,
+  "train_period": "2010-01 to 2021-12",
+  "test_period": "2022-01 to 2025-03",
+  "train_records": 2101,
+  "test_records": 545,
+  "commodities": [
+    "Barley (Jau)",
+    "Coconut",
+    "Coffee",
+    "Cotton",
+    "Ginger(Dry)",
+    "Groundnut",
+    "Jowar(Sorghum)",
+    "Maize",
+    "Millets",
+    "Rice",
+    "Sugar",
+    "Sunflower",
+    "Tea",
+    "Turmeric",
+    "Wheat"
+  ],
+  "evaluation_metrics": {
+    "crop_mean_baseline": {
+      "mae": 2057.74,
+      "rmse": 3121.28,
+      "r2": 0.499
+    },
+    "seasonal_baseline": {
+      "mae": 2063.38,
+      "rmse": 3153.12,
+      "r2": 0.489
+    },
+    "random_forest_model": {
+      "mae": 1585.48,
+      "rmse": 3028.8,
+      "r2": 0.528,
+      "mae_improvement_pct": 23.0,
+      "rmse_improvement_pct": 3.0
+    }
+  }
+}

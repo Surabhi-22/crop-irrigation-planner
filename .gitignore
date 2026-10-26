@@ -218,3 +218,28 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# Node.js
+node_modules/
+
+# Build outputs
+dist/
+build/
+
+# Temporary files and backups
+scratch_zip/
+frontend - backup/
+stitch_cropwise_agricultural_dashboard/
+*.zip
