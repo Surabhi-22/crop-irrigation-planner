@@ -33,9 +33,20 @@ const defaultBaselineFarm = {
 
 function App() {
   // ── Auth state ────────────────────────────────────────
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, authError, clearAuthError } = useAuth();
   // "login" | "signup" | "forgot"
-  const [authView, setAuthView] = useState("login");
+  const [authView, setAuthView] = useState(() => {
+    try {
+      const intent =
+        typeof window !== "undefined"
+          ? sessionStorage.getItem("quantum_agri_auth_intent")
+          : null;
+      if (intent === "signup") return "signup";
+    } catch {
+      // ignore
+    }
+    return "login";
+  });
 
   // ── App page state ────────────────────────────────────
   const [activePage, setActivePage] = useState("Home");
@@ -718,22 +729,70 @@ function App() {
     if (authView === "signup")
       return (
         <SignupPage
-          onNavigateToLogin={() => setAuthView("login")}
-          onAuthSuccess={() => setAuthView("login")}
+          onNavigateToLogin={() => {
+            clearAuthError?.();
+            try {
+              sessionStorage.removeItem("quantum_agri_auth_intent");
+            } catch {
+              // ignore
+            }
+            setAuthView("login");
+          }}
+          onAuthSuccess={() => {
+            try {
+              sessionStorage.removeItem("quantum_agri_auth_intent");
+            } catch {
+              // ignore
+            }
+            setAuthView("login");
+          }}
+          oauthError={authError}
         />
       );
     if (authView === "forgot")
       return (
         <ForgotPasswordPage
-          onNavigateToLogin={() => setAuthView("login")}
+          onNavigateToLogin={() => {
+            clearAuthError?.();
+            try {
+              sessionStorage.removeItem("quantum_agri_auth_intent");
+            } catch {
+              // ignore
+            }
+            setAuthView("login");
+          }}
         />
       );
     // Default: login
     return (
       <LoginPage
-        onNavigateToSignup={() => setAuthView("signup")}
-        onNavigateToForgot={() => setAuthView("forgot")}
-        onAuthSuccess={() => setAuthView("login")}
+        onNavigateToSignup={() => {
+          clearAuthError?.();
+          try {
+            sessionStorage.setItem("quantum_agri_auth_intent", "signup");
+          } catch {
+            // ignore
+          }
+          setAuthView("signup");
+        }}
+        onNavigateToForgot={() => {
+          clearAuthError?.();
+          try {
+            sessionStorage.removeItem("quantum_agri_auth_intent");
+          } catch {
+            // ignore
+          }
+          setAuthView("forgot");
+        }}
+        onAuthSuccess={() => {
+          try {
+            sessionStorage.removeItem("quantum_agri_auth_intent");
+          } catch {
+            // ignore
+          }
+          setAuthView("login");
+        }}
+        oauthError={authError}
       />
     );
   }

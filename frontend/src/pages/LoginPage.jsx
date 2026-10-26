@@ -8,7 +8,12 @@
 import { useState } from "react";
 import { signInWithEmail, signInWithGoogle } from "../lib/supabaseClient";
 
-export default function LoginPage({ onNavigateToSignup, onNavigateToForgot, onAuthSuccess }) {
+export default function LoginPage({
+  onNavigateToSignup,
+  onNavigateToForgot,
+  onAuthSuccess,
+  oauthError,
+}) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -16,6 +21,8 @@ export default function LoginPage({ onNavigateToSignup, onNavigateToForgot, onAu
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
+
+  const displayError = error || oauthError;
 
   function validate() {
     const errs = {};
@@ -53,6 +60,11 @@ export default function LoginPage({ onNavigateToSignup, onNavigateToForgot, onAu
     setError("");
     setGoogleLoading(true);
     try {
+      try {
+        sessionStorage.setItem("quantum_agri_auth_intent", "login");
+      } catch {
+        // ignore
+      }
       const { error: authError } = await signInWithGoogle();
       if (authError) setError(authError.message);
       // On success, Supabase redirects the browser — no further action needed here.
@@ -102,10 +114,10 @@ export default function LoginPage({ onNavigateToSignup, onNavigateToForgot, onAu
             </p>
           </div>
 
-          {error && (
+          {displayError && (
             <div className="auth-error-banner" role="alert">
               <span className="material-symbols-outlined">error</span>
-              <span>{error}</span>
+              <span>{displayError}</span>
             </div>
           )}
 

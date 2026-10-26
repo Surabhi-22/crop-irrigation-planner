@@ -15,7 +15,10 @@
 
 import { createClient } from "@supabase/supabase-js";
 
-const rawUrl = import.meta.env.VITE_SUPABASE_URL?.trim() || "";
+const env =
+  typeof import.meta !== "undefined" && import.meta.env ? import.meta.env : {};
+
+const rawUrl = env.VITE_SUPABASE_URL?.trim() || "";
 let supabaseUrl = rawUrl;
 if (supabaseUrl && !supabaseUrl.startsWith("http://") && !supabaseUrl.startsWith("https://")) {
   supabaseUrl = supabaseUrl.includes(".")
@@ -25,8 +28,8 @@ if (supabaseUrl && !supabaseUrl.startsWith("http://") && !supabaseUrl.startsWith
 
 // Support both the legacy ANON_KEY name and the newer PUBLISHABLE_KEY name
 const supabaseKey =
-  (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim() ||
-    import.meta.env.VITE_SUPABASE_ANON_KEY?.trim()) ?? "";
+  (env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim() ||
+    env.VITE_SUPABASE_ANON_KEY?.trim()) ?? "";
 
 /**
  * True when both credentials are present and look plausible.
@@ -75,15 +78,20 @@ export async function signUpWithEmail(email, password) {
  * Initiate Google OAuth flow.
  * The user is redirected back to the app after authentication.
  */
-export async function signInWithGoogle() {
+export async function signInWithGoogle(options = {}) {
   if (!supabase) return NOT_CONFIGURED_ERROR;
 
   const redirectTo =
-    import.meta.env.VITE_APP_URL?.trim() || window.location.origin;
+    options.redirectTo ||
+    env.VITE_APP_URL?.trim() ||
+    (typeof window !== "undefined" ? window.location.origin : "");
 
   return supabase.auth.signInWithOAuth({
     provider: "google",
-    options: { redirectTo },
+    options: {
+      redirectTo,
+      ...options,
+    },
   });
 }
 
@@ -93,9 +101,10 @@ export async function signInWithGoogle() {
 export async function sendPasswordReset(email) {
   if (!supabase) return NOT_CONFIGURED_ERROR;
 
-  const redirectTo =
-    (import.meta.env.VITE_APP_URL?.trim() || window.location.origin) +
-    "?auth=reset";
+  const origin =
+    env.VITE_APP_URL?.trim() ||
+    (typeof window !== "undefined" ? window.location.origin : "");
+  const redirectTo = origin ? `${origin}?auth=reset` : undefined;
 
   return supabase.auth.resetPasswordForEmail(email, { redirectTo });
 }
@@ -114,10 +123,10 @@ export async function signOut() {
  */
 export function onAuthStateChange(callback) {
   if (!supabase) return () => {};
-  const { data } = supabase.auth.onAuthStateChange((_event, session) => {
-    callback(session);
+  const { data } = supabase.auth.onAuthStateChange((event, session) => {
+    callback(event, session);
   });
-  return () => data.subscription.unsubscribe();
+  return () => data?.subscription?.unsubscribe?.();
 }
 
 /**
