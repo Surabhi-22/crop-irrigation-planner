@@ -1,20 +1,16 @@
-﻿/**
- * Shared Sidebar component for CropWise.
+/**
+ * Shared Sidebar component for Quantum Agri.
  *
- * Implements the 8 navigation entries from the CropWise design system
- * using Material Symbols Outlined icons, active-state indicator bars,
- * and genuine farm workspace status (no fabricated latency or telemetry).
+ * Implements simplified 5-item navigation:
+ * Home, My Farm, Crop Planner, My Plans, Settings
  */
 
 const navigationItems = [
-  { label: "Overview", icon: "dashboard", aliases: ["Dashboard"] },
-  { label: "Farm Details", icon: "warehouse" },
-  { label: "Crop Recommendations", icon: "potted_plant" },
-  { label: "Water Optimization", icon: "water_drop" },
-  { label: "Market Insights", icon: "trending_up" },
-  { label: "Scenario Lab", icon: "science" },
-  { label: "Planning History", icon: "history" },
-  { label: "Settings", icon: "settings" },
+  { label: "Home", icon: "home", aliases: ["Overview", "Dashboard"] },
+  { label: "My Farm", icon: "agriculture", aliases: ["Farm Details"] },
+  { label: "Crop Planner", icon: "psychiatry", aliases: ["Crop Recommendations", "Water Optimization", "Market Insights", "Scenario Lab"] },
+  { label: "My Plans", icon: "inventory_2", aliases: ["Planning History"] },
+  { label: "Settings", icon: "settings", aliases: [] },
 ];
 
 export default function Sidebar({ activePage, onNavigate, farmData, user, onLogout }) {
@@ -36,7 +32,7 @@ export default function Sidebar({ activePage, onNavigate, farmData, user, onLogo
           </div>
 
           <div className="brand-text">
-            <h2>CropWise</h2>
+            <h2>Quantum Agri</h2>
             <p>AGRICULTURAL INTELLIGENCE</p>
           </div>
         </div>
@@ -44,30 +40,30 @@ export default function Sidebar({ activePage, onNavigate, farmData, user, onLogo
         {/* Farm Context Indicator */}
         <div
           className="farm-context-card"
-          onClick={() => onNavigate("Farm Details")}
+          onClick={() => onNavigate("My Farm")}
           role="button"
           tabIndex={0}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
-              onNavigate("Farm Details");
+              onNavigate("My Farm");
             }
           }}
-          title="Click to view or edit farm parameters"
+          title="Click to view or edit farm details"
         >
           <div className="farm-context-inner">
             <div className="farm-context-icon">
               <span className="material-symbols-outlined" aria-hidden="true">
-                grid_view
+                agriculture
               </span>
             </div>
             <div className="farm-context-info">
               <span className="farm-context-title">
-                {farmData?.location || "Demo Farm Profile"}
+                {farmData?.location || "My Farm"}
               </span>
               <span className="farm-context-subtitle">
                 {farmData
-                  ? `${farmData.areaAcres} Ac â€¢ ${farmData.season}`
-                  : "5.0 Ac â€¢ Baseline Sample"}
+                  ? `${farmData.areaAcres} Acres • ${farmData.season}`
+                  : "5.0 Acres • Sample Profile"}
               </span>
             </div>
           </div>
@@ -113,7 +109,7 @@ export default function Sidebar({ activePage, onNavigate, farmData, user, onLogo
                 <span className="sidebar-user-email" title={user.email}>
                   {user.email}
                 </span>
-                <span className="sidebar-user-plan">CropWise</span>
+                <span className="sidebar-user-plan">Quantum Agri</span>
               </div>
             </div>
             <button
@@ -121,7 +117,7 @@ export default function Sidebar({ activePage, onNavigate, farmData, user, onLogo
               className="sidebar-logout-btn"
               onClick={onLogout}
               title="Sign out"
-              aria-label="Sign out of CropWise"
+              aria-label="Sign out of Quantum Agri"
             >
               <span className="material-symbols-outlined">logout</span>
             </button>
@@ -140,4 +136,4 @@ export default function Sidebar({ activePage, onNavigate, farmData, user, onLogo
       </div>
     </aside>
   );
-}
+}

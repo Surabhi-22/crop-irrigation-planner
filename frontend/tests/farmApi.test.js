@@ -225,5 +225,28 @@ test('toBackendSchema handles snake_case properties as fallbacks without NaN', (
   assert.strictEqual(payload.budget_inr, 80000.0);
 });
 
+test('generatePlan payload structure satisfies backend validation expectations', () => {
+  const farmInput = {
+    areaAcres: 8.0,
+    soilType: 'Black',
+    expectedRainfallMm: 500,
+    availableWaterM3: 2000,
+    location: 'Dharwad',
+    season: 'Rabi',
+    budget: 50000,
+  };
+
+  const payload = toBackendSchema(farmInput);
+  assert.strictEqual(typeof payload.area_acres, 'number');
+  assert.ok(payload.area_acres > 0);
+  assert.strictEqual(typeof payload.soil_type, 'string');
+  assert.strictEqual(typeof payload.expected_rainfall_mm, 'number');
+  assert.strictEqual(typeof payload.available_water_m3, 'number');
+  assert.strictEqual(typeof payload.location, 'string');
+  assert.strictEqual(typeof payload.season, 'string');
+  assert.strictEqual(typeof payload.budget_inr, 'number');
+  assert.ok(payload.budget_inr > 0);
+});
+
 
 

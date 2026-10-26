@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 export default function PlanResults({
   plan,
   loading,
@@ -5,6 +7,7 @@ export default function PlanResults({
   onRegenerate,
   onEditFarm,
 }) {
+  const [viewMode, setViewMode] = useState("cards");
 
   if (loading) {
     return (
@@ -13,10 +16,9 @@ export default function PlanResults({
           <div className="loading-pulse-ring" />
           <span className="material-symbols-outlined spin-icon">psychology</span>
         </div>
-        <h3>Evaluating Agricultural Intelligence Engine...</h3>
+        <h3>Creating Your Farm Plan...</h3>
         <p>
-          Running 4-gate agronomic feasibility checks (Season · Soil · Water · Budget)
-          against ICAR benchmark models.
+          Calculating crop suitability, water quotas, and profit forecasts based on your farm conditions.
         </p>
       </div>
     );
@@ -42,12 +44,12 @@ export default function PlanResults({
           </div>
           <div>
             <span className="eyebrow">
-              {is422Infeasible ? "AGRONOMIC CONSTRAINT VIOLATION" : "EXECUTION ERROR"}
+              {is422Infeasible ? "FARM CONDITIONS NOTICE" : "PLANNING ERROR"}
             </span>
             <h2>
               {is422Infeasible
-                ? "No Feasible Crop Configuration Found"
-                : "Unable to Generate Agricultural Plan"}
+                ? "No Crops Match All Conditions Yet"
+                : "Unable to Create Farm Plan"}
             </h2>
           </div>
         </div>
@@ -56,7 +58,7 @@ export default function PlanResults({
 
         {suggestions.length > 0 && (
           <div className="plan-suggestions-box">
-            <h4>Recommended Adjustments to Achieve Feasibility:</h4>
+            <h4>Simple Tips to Find Suitable Crops:</h4>
             <ul>
               {suggestions.map((item, idx) => (
                 <li key={idx}>
@@ -70,14 +72,24 @@ export default function PlanResults({
 
         <div className="plan-error-actions">
           {onEditFarm && (
-            <button className="primary-button" onClick={onEditFarm}>
-              Adjust Farm Parameters →
+            <button type="button" className="primary-button" onClick={onEditFarm}>
+              Update Farm Details →
             </button>
           )}
           {onRegenerate && (
-            <button className="secondary-button" onClick={onRegenerate}>
-              <span className="material-symbols-outlined">refresh</span>
-              Retry Planning
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={(e) => {
+                e.preventDefault();
+                onRegenerate();
+              }}
+              disabled={loading}
+            >
+              <span className={`material-symbols-outlined ${loading ? "spin-icon" : ""}`}>
+                {loading ? "sync" : "refresh"}
+              </span>
+              {loading ? "Checking Farm Plan..." : "Try Again"}
             </button>
           )}
         </div>
@@ -102,6 +114,52 @@ export default function PlanResults({
     disclaimer,
   } = plan;
 
+  const hasFeasibleCrops = Boolean(top_recommendation && all_feasible_crops.length > 0);
+
+  if (!hasFeasibleCrops) {
+    return (
+      <div className="plan-results-error panel" role="alert">
+        <div className="plan-error-header">
+          <div className="error-icon-badge">
+            <span className="material-symbols-outlined">warning</span>
+          </div>
+          <div>
+            <span className="eyebrow">FARM CONDITIONS NOTICE</span>
+            <h2>No Crops Match All Conditions Yet</h2>
+          </div>
+        </div>
+
+        <p className="plan-error-reason">
+          No crops met all feasibility criteria (Season, Soil, Water, Budget) for your farm. Try adjusting your water quota or budget.
+        </p>
+
+        <div className="plan-error-actions">
+          {onEditFarm && (
+            <button type="button" className="primary-button" onClick={onEditFarm}>
+              Update Farm Details →
+            </button>
+          )}
+          {onRegenerate && (
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={(e) => {
+                e.preventDefault();
+                onRegenerate();
+              }}
+              disabled={loading}
+            >
+              <span className={`material-symbols-outlined ${loading ? "spin-icon" : ""}`}>
+                {loading ? "sync" : "refresh"}
+              </span>
+              {loading ? "Checking Farm Plan..." : "Try Again"}
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="plan-results-container">
       {/* Top Header Panel */}
@@ -110,10 +168,10 @@ export default function PlanResults({
           <div>
             <div className="plan-status-pill feasible">
               <span className="material-symbols-outlined">check_circle</span>
-              <span>Agronomically Feasible Plan</span>
+              <span>Farm Plan Ready</span>
             </div>
             <h2>
-              Optimal Crop Strategy: {top_recommendation ? top_recommendation.name : "N/A"}
+              Top Recommended Crop: {top_recommendation.name}
             </h2>
             <p className="plan-hero-sub">
               Calculated for <strong>{farm_area_acres} acres</strong> of{" "}
@@ -130,7 +188,7 @@ export default function PlanResults({
                 title="Recalculate plan with current parameters"
               >
                 <span className="material-symbols-outlined">refresh</span>
-                Recalculate
+                Recalculate Plan
               </button>
             )}
           </div>
@@ -155,12 +213,22 @@ export default function PlanResults({
 
               <div className="top-rec-metrics">
                 <div className="rec-metric-item highlight-profit">
-                  <span className="metric-lbl">Est. Net Profit (Full Area)</span>
+                  <span className="metric-lbl">Est. Net Profit</span>
                   <strong className="metric-val tnum">
                     ₹{Math.round(top_recommendation.est_total_profit_inr).toLocaleString("en-IN")}
                   </strong>
                   <span className="metric-sub">
-                    ₹{Math.round(top_recommendation.est_total_profit_inr / farm_area_acres).toLocaleString("en-IN")} / ac
+                    ₹{Math.round(top_recommendation.est_total_profit_inr / farm_area_acres).toLocaleString("en-IN")} / acre
+                  </span>
+                </div>
+
+                <div className="rec-metric-item">
+                  <span className="metric-lbl">Est. Total Harvest</span>
+                  <strong className="metric-val tnum">
+                    {top_recommendation.est_total_yield_tonnes.toFixed(1)} tonnes
+                  </strong>
+                  <span className="metric-sub">
+                    {top_recommendation.yield_t_per_acre} t/ac expected yield
                   </span>
                 </div>
 
@@ -169,9 +237,7 @@ export default function PlanResults({
                   <strong className="metric-val tnum">
                     ₹{Math.round(top_recommendation.est_total_revenue_inr).toLocaleString("en-IN")}
                   </strong>
-                  <span className="metric-sub">
-                    {top_recommendation.est_total_yield_tonnes.toFixed(1)} tonnes harvested
-                  </span>
+                  <span className="metric-sub">Gross income</span>
                 </div>
 
                 <div className="rec-metric-item">
@@ -185,7 +251,7 @@ export default function PlanResults({
                 </div>
 
                 <div className="rec-metric-item">
-                  <span className="metric-lbl">Supplemental Irrigation</span>
+                  <span className="metric-lbl">Water Needed</span>
                   <strong className="metric-val tnum">
                     {Math.round(top_recommendation.irrigation_req_m3).toLocaleString("en-IN")} m³
                   </strong>
@@ -204,10 +270,10 @@ export default function PlanResults({
         <section className="panel water-allocation-panel">
           <div className="panel-heading">
             <div>
-              <span className="eyebrow">HYDROLOGICAL BALANCE</span>
-              <h2>Water Allocation & Quota Utilization</h2>
+              <span className="eyebrow">WATER USAGE</span>
+              <h2>Water Available vs. Water Needed</h2>
               <p>
-                Dynamic allocation of volumetric irrigation reserve against crop transpiration demand.
+                How much of your available irrigation water is needed for this crop plan.
               </p>
             </div>
             <span className="panel-icon">💧</span>
@@ -216,11 +282,11 @@ export default function PlanResults({
           <div className="water-bar-wrapper">
             <div className="water-bar-labels">
               <span>
-                <strong>Allocated:</strong> {Math.round(water.allocated_m3).toLocaleString("en-IN")} m³ (
+                <strong>Water Used:</strong> {Math.round(water.allocated_m3).toLocaleString("en-IN")} m³ (
                 {water.allocation_pct}%)
               </span>
               <span>
-                <strong>Remaining Reserve:</strong> {Math.round(water.remaining_m3).toLocaleString("en-IN")} m³
+                <strong>Remaining Water Buffer:</strong> {Math.round(water.remaining_m3).toLocaleString("en-IN")} m³
               </span>
             </div>
             <div
@@ -239,97 +305,192 @@ export default function PlanResults({
 
           <div className="water-stats-row">
             <div className="water-stat-cell">
-              <span className="stat-label">Total Reserve Quota</span>
+              <span className="stat-label">Total Water Quota</span>
               <strong className="stat-val tnum">{water.total_available_m3.toLocaleString("en-IN")} m³</strong>
             </div>
             <div className="water-stat-cell">
-              <span className="stat-label">Expected Rainfall Volume</span>
+              <span className="stat-label">Expected Rain Volume</span>
               <strong className="stat-val tnum">{water.expected_rainfall_m3.toLocaleString("en-IN")} m³</strong>
             </div>
             <div className="water-stat-cell">
-              <span className="stat-label">Supplemental Irrigation Needed</span>
+              <span className="stat-label">Irrigation Needed</span>
               <strong className="stat-val tnum">{water.allocated_m3.toLocaleString("en-IN")} m³</strong>
             </div>
             <div className="water-stat-cell">
-              <span className="stat-label">Safe Unallocated Buffer</span>
+              <span className="stat-label">Remaining Water Buffer</span>
               <strong className="stat-val tnum">{water.remaining_m3.toLocaleString("en-IN")} m³</strong>
             </div>
           </div>
         </section>
       )}
 
-      {/* Feasible Crops Comparative Matrix */}
+      {/* Feasible Crops Comparative Section */}
       {all_feasible_crops.length > 0 && (
         <section className="panel feasible-crops-panel">
           <div className="panel-heading">
             <div>
-              <span className="eyebrow">COMPARATIVE BENCHMARK MATRIX</span>
-              <h2>All Feasible Crop Options ({all_feasible_crops.length})</h2>
+              <span className="eyebrow">RECOMMENDED CROPS</span>
+              <h2>Suitable Crop Options ({all_feasible_crops.length})</h2>
               <p>
-                All crops meeting season, soil type, irrigation limits, and budget thresholds.
-                Ranked by estimated net return.
+                All crops suitable for your land, season, water, and budget. Ranked by estimated profit.
               </p>
+            </div>
+
+            <div className="view-mode-toggle" role="tablist" aria-label="Crop display view">
+              <button
+                type="button"
+                className={`toggle-btn ${viewMode === "cards" ? "active" : ""}`}
+                onClick={() => setViewMode("cards")}
+                aria-pressed={viewMode === "cards"}
+              >
+                <span className="material-symbols-outlined">grid_view</span>
+                Cards
+              </button>
+              <button
+                type="button"
+                className={`toggle-btn ${viewMode === "table" ? "active" : ""}`}
+                onClick={() => setViewMode("table")}
+                aria-pressed={viewMode === "table"}
+              >
+                <span className="material-symbols-outlined">table_chart</span>
+                Table
+              </button>
             </div>
           </div>
 
-          <div className="data-table-container">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Rank & Crop</th>
-                  <th>Duration</th>
-                  <th>Water Req.</th>
-                  <th>Est. Harvest</th>
-                  <th>Est. Cost</th>
-                  <th>Est. Revenue</th>
-                  <th>Est. Net Profit</th>
-                </tr>
-              </thead>
-              <tbody>
-                {all_feasible_crops.map((crop, index) => {
-                  const isTop = index === 0;
-                  return (
-                    <tr
-                      key={crop.name}
-                      className={isTop ? "highlight-row" : ""}
-                    >
-                      <td>
-                        <div className="crop-cell-title">
-                          <span className={`rank-dot ${isTop ? "top-rank" : ""}`}>
-                            {index + 1}
-                          </span>
-                          <div>
-                            <strong>{crop.name}</strong>
-                            {isTop && <span className="top-badge">Top Pick</span>}
-                          </div>
-                        </div>
-                      </td>
-                      <td>{crop.duration_days} days</td>
-                      <td className="tnum">
-                        {Math.round(crop.irrigation_req_m3).toLocaleString("en-IN")} m³
-                        <span className="sub-unit"> ({crop.water_req_mm} mm)</span>
-                      </td>
-                      <td className="tnum">
-                        {crop.est_total_yield_tonnes.toFixed(1)} t
-                        <span className="sub-unit"> ({crop.yield_t_per_acre} t/ac)</span>
-                      </td>
-                      <td className="tnum">
-                        ₹{Math.round(crop.est_total_cost_inr).toLocaleString("en-IN")}
-                      </td>
-                      <td className="tnum">
-                        ₹{Math.round(crop.est_total_revenue_inr).toLocaleString("en-IN")}
-                      </td>
-                      <td className="tnum profit-cell">
-                        <strong>
-                          ₹{Math.round(crop.est_total_profit_inr).toLocaleString("en-IN")}
+          {viewMode === "cards" ? (
+            /* ── Readable Cards View ────────────────────────────── */
+            <div className="crop-recommendations-grid">
+              {all_feasible_crops.map((crop, index) => {
+                const isTop = index === 0;
+                return (
+                  <article
+                    key={crop.name}
+                    className={`crop-rec-card ${isTop ? "top-card" : ""}`}
+                  >
+                    <div className="crop-rec-card-header">
+                      <div className="crop-rec-badge-row">
+                        <span className={`crop-rec-rank ${isTop ? "top-rank" : ""}`}>
+                          #{index + 1} {isTop ? "Top Pick" : "Option"}
+                        </span>
+                        <span className="crop-duration-pill">
+                          ⏱ {crop.duration_days} days
+                        </span>
+                        {crop.season && (
+                          <span className="crop-season-pill">{crop.season}</span>
+                        )}
+                      </div>
+                      <h3 className="crop-rec-title">{crop.name}</h3>
+                      {crop.notes && <p className="crop-rec-notes">{crop.notes}</p>}
+                    </div>
+
+                    <div className="crop-rec-profit-box">
+                      <span className="profit-label">Expected Net Profit</span>
+                      <strong className="profit-value tnum">
+                        ₹{Math.round(crop.est_total_profit_inr).toLocaleString("en-IN")}
+                      </strong>
+                      <span className="profit-sub">
+                        ₹{Math.round(crop.est_total_profit_inr / farm_area_acres).toLocaleString("en-IN")} per acre
+                      </span>
+                    </div>
+
+                    <div className="crop-rec-details-grid">
+                      <div className="rec-detail-cell">
+                        <span className="detail-label">🌾 Est. Harvest</span>
+                        <strong className="detail-val tnum">
+                          {crop.est_total_yield_tonnes.toFixed(1)} t
                         </strong>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                        <span className="detail-sub">({crop.yield_t_per_acre} t/ac)</span>
+                      </div>
+
+                      <div className="rec-detail-cell">
+                        <span className="detail-label">💵 Est. Cost</span>
+                        <strong className="detail-val tnum">
+                          ₹{Math.round(crop.est_total_cost_inr).toLocaleString("en-IN")}
+                        </strong>
+                        <span className="detail-sub">(₹{crop.cost_inr_per_acre.toLocaleString("en-IN")}/ac)</span>
+                      </div>
+
+                      <div className="rec-detail-cell">
+                        <span className="detail-label">📈 Revenue</span>
+                        <strong className="detail-val tnum">
+                          ₹{Math.round(crop.est_total_revenue_inr).toLocaleString("en-IN")}
+                        </strong>
+                      </div>
+
+                      <div className="rec-detail-cell">
+                        <span className="detail-label">💧 Water Needed</span>
+                        <strong className="detail-val tnum">
+                          {Math.round(crop.irrigation_req_m3).toLocaleString("en-IN")} m³
+                        </strong>
+                        <span className="detail-sub">({crop.water_req_mm} mm)</span>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          ) : (
+            /* ── Comparative Table View ────────────────────────── */
+            <div className="data-table-container">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Rank &amp; Crop</th>
+                    <th>Duration</th>
+                    <th>Water Req.</th>
+                    <th>Est. Harvest</th>
+                    <th>Est. Cost</th>
+                    <th>Est. Revenue</th>
+                    <th>Est. Net Profit</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {all_feasible_crops.map((crop, index) => {
+                    const isTop = index === 0;
+                    return (
+                      <tr
+                        key={crop.name}
+                        className={isTop ? "highlight-row" : ""}
+                      >
+                        <td>
+                          <div className="crop-cell-title">
+                            <span className={`rank-dot ${isTop ? "top-rank" : ""}`}>
+                              {index + 1}
+                            </span>
+                            <div>
+                              <strong>{crop.name}</strong>
+                              {isTop && <span className="top-badge">Top Pick</span>}
+                            </div>
+                          </div>
+                        </td>
+                        <td>{crop.duration_days} days</td>
+                        <td className="tnum">
+                          {Math.round(crop.irrigation_req_m3).toLocaleString("en-IN")} m³
+                          <span className="sub-unit"> ({crop.water_req_mm} mm)</span>
+                        </td>
+                        <td className="tnum">
+                          {crop.est_total_yield_tonnes.toFixed(1)} t
+                          <span className="sub-unit"> ({crop.yield_t_per_acre} t/ac)</span>
+                        </td>
+                        <td className="tnum">
+                          ₹{Math.round(crop.est_total_cost_inr).toLocaleString("en-IN")}
+                        </td>
+                        <td className="tnum">
+                          ₹{Math.round(crop.est_total_revenue_inr).toLocaleString("en-IN")}
+                        </td>
+                        <td className="tnum profit-cell">
+                          <strong>
+                            ₹{Math.round(crop.est_total_profit_inr).toLocaleString("en-IN")}
+                          </strong>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </section>
       )}
 

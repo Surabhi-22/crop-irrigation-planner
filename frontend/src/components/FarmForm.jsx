@@ -185,20 +185,20 @@ export default function FarmForm({ onSubmit, onReset, initialData }) {
       <div className="farm-config-header">
         <div className="farm-config-header-info">
           <div className="farm-config-icon-badge">
-            <span className="material-symbols-outlined">tune</span>
+            <span className="material-symbols-outlined">agriculture</span>
           </div>
           <div>
-            <h2>Farm Configuration &amp; Agronomic Baseline</h2>
+            <h2>My Farm Details</h2>
             <div className="farm-config-status">
               <span
                 className={`status-dot ${isModified ? "draft" : "synced"}`}
               ></span>
               <span>
                 {isModified
-                  ? "Editing in-progress parameters (unsaved changes)"
+                  ? "Unsaved changes (click Save Farm Details below)"
                   : initialData
-                  ? "Validated baseline active across workspace"
-                  : "Ready for baseline parameter entry"}
+                  ? "Farm details saved and active"
+                  : "Ready to enter your farm details"}
               </span>
             </div>
           </div>
@@ -232,7 +232,7 @@ export default function FarmForm({ onSubmit, onReset, initialData }) {
                   <span className="material-symbols-outlined section-icon">
                     share_location
                   </span>
-                  <h3>Section 1: Land &amp; Location</h3>
+                  <h3>Step 1: Land &amp; Location</h3>
                 </div>
                 <span className="section-badge">
                   <span
@@ -241,7 +241,7 @@ export default function FarmForm({ onSubmit, onReset, initialData }) {
                   >
                     pin_drop
                   </span>
-                  Geographic Boundary
+                  Location &amp; Season
                 </span>
               </div>
 
@@ -253,7 +253,7 @@ export default function FarmForm({ onSubmit, onReset, initialData }) {
                       Location or District{" "}
                       <span className="required-star">*</span>
                     </label>
-                    <span className="hint-pill">Agro-climatic zone</span>
+                    <span className="hint-pill">Agro District</span>
                   </div>
                   <div className="input-with-icon">
                     <span className="material-symbols-outlined input-prefix-icon">
@@ -265,13 +265,13 @@ export default function FarmForm({ onSubmit, onReset, initialData }) {
                       name="location"
                       value={farm.location}
                       onChange={handleChange}
-                      placeholder="e.g. Bengaluru Rural, Karnataka"
+                      placeholder="e.g. Belagavi, Mandya, Bengaluru Rural"
                       disabled={isSubmitting}
                       required
                     />
                   </div>
                   <span className="field-helper">
-                    Regional administrative district used to anchor seasonal rainfall and soil baselines.
+                    Enter your district or nearest city so we can match local rainfall and crop norms.
                   </span>
                 </div>
 
@@ -279,7 +279,7 @@ export default function FarmForm({ onSubmit, onReset, initialData }) {
                 <div className="form-group">
                   <div className="label-row">
                     <label htmlFor="cultivation-area">
-                      Cultivation Area <span className="required-star">*</span>
+                      Land Area <span className="required-star">*</span>
                     </label>
                   </div>
                   <div className="input-with-addon">
@@ -298,7 +298,7 @@ export default function FarmForm({ onSubmit, onReset, initialData }) {
                     <span className="input-suffix-addon">Acres</span>
                   </div>
                   <span className="field-helper">
-                    Net operable tillage area under active cultivation (must be &gt; 0).
+                    Total land area you plan to cultivate (must be greater than 0).
                   </span>
                 </div>
 
@@ -306,7 +306,7 @@ export default function FarmForm({ onSubmit, onReset, initialData }) {
                 <div className="form-group">
                   <div className="label-row">
                     <label htmlFor="growing-season">
-                      Growing Season <span className="required-star">*</span>
+                      Planting Season <span className="required-star">*</span>
                     </label>
                   </div>
                   <div className="select-with-arrow">
@@ -317,16 +317,16 @@ export default function FarmForm({ onSubmit, onReset, initialData }) {
                       onChange={handleChange}
                       disabled={isSubmitting}
                     >
-                      <option value="Kharif">Kharif (Monsoon Cycle / Jun–Nov)</option>
-                      <option value="Rabi">Rabi (Winter Cycle / Nov–Apr)</option>
-                      <option value="Summer">Summer (Zaid Cycle / Mar–Jun)</option>
+                      <option value="Kharif">Kharif (Monsoon Season / Jun–Nov)</option>
+                      <option value="Rabi">Rabi (Winter Season / Nov–Apr)</option>
+                      <option value="Summer">Summer (Zaid Season / Mar–Jun)</option>
                     </select>
                     <span className="material-symbols-outlined select-arrow">
                       unfold_more
                     </span>
                   </div>
                   <span className="field-helper">
-                    Seasonal planting cycle dictating temperature regimes and crop life-cycles.
+                    Choose the planting cycle you are preparing for.
                   </span>
                 </div>
               </div>
@@ -339,7 +339,7 @@ export default function FarmForm({ onSubmit, onReset, initialData }) {
                   <span className="material-symbols-outlined section-icon">
                     landscape
                   </span>
-                  <h3>Section 2: Soil &amp; Hydrology</h3>
+                  <h3>Step 2: Soil &amp; Water Supply</h3>
                 </div>
                 <span className="section-badge">
                   <span
@@ -348,7 +348,7 @@ export default function FarmForm({ onSubmit, onReset, initialData }) {
                   >
                     water_drop
                   </span>
-                  Soil &amp; Water Matrix
+                  Soil &amp; Water
                 </span>
               </div>
 
@@ -357,10 +357,10 @@ export default function FarmForm({ onSubmit, onReset, initialData }) {
                 <div className="form-group span-2">
                   <div className="label-row">
                     <label htmlFor="soil-type">
-                      Soil Taxonomy &amp; Texture{" "}
+                      Soil Type{" "}
                       <span className="required-star">*</span>
                     </label>
-                    <span className="hint-pill">Hydrological Drainage</span>
+                    <span className="hint-pill">Soil Quality</span>
                   </div>
                   <div className="select-with-arrow">
                     <select
@@ -371,16 +371,16 @@ export default function FarmForm({ onSubmit, onReset, initialData }) {
                       disabled={isSubmitting}
                     >
                       <option value="Loamy">
-                        Loamy — Balanced fertility, optimal percolation &amp; moisture holding
+                        Loamy (Medium soil — balanced drainage &amp; good moisture retention)
                       </option>
                       <option value="Clay">
-                        Clay — Dense alluvial, high moisture retention, slow percolation
+                        Clay (Heavy soil — holds water very well, slower drainage)
                       </option>
                       <option value="Sandy">
-                        Sandy — Porous texture, rapid infiltration, frequent irrigation needed
+                        Sandy (Light soil — drains quickly, needs regular watering)
                       </option>
                       <option value="Silty">
-                        Silty — Fine texture, high nutrient availability, moderate drainage
+                        Silty (Smooth fertile soil — fertile with good water holding)
                       </option>
                     </select>
                     <span className="material-symbols-outlined select-arrow">
@@ -388,7 +388,7 @@ export default function FarmForm({ onSubmit, onReset, initialData }) {
                     </span>
                   </div>
                   <span className="field-helper">
-                    Soil texture determines daily percolation losses, root aeration, and water-holding capacity.
+                    Different crops thrive in different soils. Select the predominant soil in your field.
                   </span>
                 </div>
 
@@ -396,7 +396,7 @@ export default function FarmForm({ onSubmit, onReset, initialData }) {
                 <div className="form-group">
                   <div className="label-row">
                     <label htmlFor="expected-rainfall">
-                      Expected Seasonal Rainfall{" "}
+                      Expected Rainfall{" "}
                       <span className="required-star">*</span>
                     </label>
                   </div>
@@ -416,7 +416,7 @@ export default function FarmForm({ onSubmit, onReset, initialData }) {
                     <span className="input-suffix-addon">mm</span>
                   </div>
                   <span className="field-helper">
-                    Forecasted natural cumulative atmospheric precipitation.
+                    Typical seasonal rainfall for your district (650 mm is standard in monsoon).
                   </span>
                 </div>
 
@@ -444,7 +444,7 @@ export default function FarmForm({ onSubmit, onReset, initialData }) {
                     <span className="input-suffix-addon">m³</span>
                   </div>
                   <span className="field-helper">
-                    Total volumetric irrigation quota (canal rights, borewell, or surface pond).
+                    Total irrigation water available from borewells, canals, or farm ponds (1 m³ ≈ 1,000 liters).
                   </span>
                 </div>
               </div>
@@ -457,10 +457,10 @@ export default function FarmForm({ onSubmit, onReset, initialData }) {
                   <span className="material-symbols-outlined section-icon">
                     account_balance_wallet
                   </span>
-                  <h3>Section 3: Financial Constraints</h3>
+                  <h3>Step 3: Farm Budget</h3>
                 </div>
                 <span className="section-badge">
-                  Operating Currency: INR (₹)
+                  Rupees (₹)
                 </span>
               </div>
 
@@ -469,7 +469,7 @@ export default function FarmForm({ onSubmit, onReset, initialData }) {
                 <div className="form-group span-2">
                   <div className="label-row">
                     <label htmlFor="farm-budget">
-                      Total Operational Budget{" "}
+                      Total Farming Budget{" "}
                       <span className="required-star">*</span>
                     </label>
                     {perAcreBudget !== null && (
@@ -496,7 +496,7 @@ export default function FarmForm({ onSubmit, onReset, initialData }) {
                     <span className="input-suffix-addon">INR</span>
                   </div>
                   <span className="field-helper">
-                    Working capital allocated for seed acquisition, fertilizer amendments, tractor fuel, and irrigation energy.
+                    Total funds available for seeds, fertilizers, tractor work, and farm labor.
                   </span>
                 </div>
               </div>
@@ -509,7 +509,7 @@ export default function FarmForm({ onSubmit, onReset, initialData }) {
                   error
                 </span>
                 <div className="alert-content">
-                  <strong>Validation Notice</strong>
+                  <strong>Please Check Your Inputs</strong>
                   <p>{error}</p>
                 </div>
               </div>
@@ -521,7 +521,7 @@ export default function FarmForm({ onSubmit, onReset, initialData }) {
                   task_alt
                 </span>
                 <div className="alert-content">
-                  <strong>FastAPI Server Verified</strong>
+                  <strong>Farm Details Verified</strong>
                   <p>{serverSuccess}</p>
                 </div>
               </div>
@@ -541,12 +541,12 @@ export default function FarmForm({ onSubmit, onReset, initialData }) {
                 </span>
                 <span>
                   {isSubmitting
-                    ? "Transmitting parameters to FastAPI validation service…"
+                    ? "Validating farm parameters and preparing your crop plan…"
                     : serverSuccess
-                    ? "All agronomic parameters validated against backend schemas."
+                    ? "Farm parameters validated and saved successfully."
                     : error
-                    ? "Please correct the highlighted inputs before saving."
-                    : "Ready to validate against regional agronomic schemas."}
+                    ? "Please check the highlighted fields above."
+                    : "Ready to save and calculate crop recommendations."}
                 </span>
               </div>
 
@@ -569,10 +569,10 @@ export default function FarmForm({ onSubmit, onReset, initialData }) {
                   </span>
                   <span>
                     {isSubmitting
-                      ? "Validating…"
+                      ? "Saving & Planning…"
                       : serverSuccess
-                      ? "Validated & Saved"
-                      : "Save Farm Details"}
+                      ? "Saved & Ready"
+                      : "Save & Plan Crops"}
                   </span>
                 </button>
               </div>

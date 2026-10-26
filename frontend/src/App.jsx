@@ -31,18 +31,6 @@ const defaultBaselineFarm = {
   budget: 100000.0,
 };
 
-const pages = [
-  "Overview",
-  "Dashboard",
-  "Farm Details",
-  "Crop Recommendations",
-  "Water Optimization",
-  "Market Insights",
-  "Scenario Lab",
-  "Planning History",
-  "Settings",
-];
-
 function App() {
   // ── Auth state ────────────────────────────────────────
   const { user, loading: authLoading } = useAuth();
@@ -50,7 +38,8 @@ function App() {
   const [authView, setAuthView] = useState("login");
 
   // ── App page state ────────────────────────────────────
-  const [activePage, setActivePage] = useState("Overview");
+  const [activePage, setActivePage] = useState("Home");
+  const [plannerSubTab, setPlannerSubTab] = useState("recommendations");
 
   const [farmData, setFarmData] = useState(() => loadSavedFarmData());
   const [notification, setNotification] = useState(null);
@@ -59,16 +48,62 @@ function App() {
   const [loadingPlan, setLoadingPlan] = useState(false);
   const [planError, setPlanError] = useState(null);
 
+  function handleNavigate(page) {
+    if (page === "Water Optimization") {
+      setActivePage("Crop Planner");
+      setPlannerSubTab("water");
+    } else if (page === "Market Insights") {
+      setActivePage("Crop Planner");
+      setPlannerSubTab("market");
+    } else if (page === "Scenario Lab") {
+      setActivePage("Crop Planner");
+      setPlannerSubTab("scenario");
+    } else if (page === "Crop Recommendations" || page === "Crop Planner") {
+      setActivePage("Crop Planner");
+      setPlannerSubTab("recommendations");
+    } else if (page === "Farm Details" || page === "My Farm") {
+      setActivePage("My Farm");
+    } else if (page === "Planning History" || page === "My Plans") {
+      setActivePage("My Plans");
+    } else if (page === "Dashboard" || page === "Overview" || page === "Home") {
+      setActivePage("Home");
+    } else {
+      setActivePage(page);
+    }
+  }
+
   async function handleGeneratePlan(overrideData) {
-    const dataToPlan = overrideData || farmData || defaultBaselineFarm;
+    const isFarmObject =
+      overrideData &&
+      typeof overrideData === "object" &&
+      !overrideData.nativeEvent &&
+      !overrideData.target &&
+      (overrideData.areaAcres !== undefined ||
+        overrideData.area !== undefined ||
+        overrideData.area_acres !== undefined);
+
+    const savedFarm = loadSavedFarmData();
+    const dataToPlan =
+      (isFarmObject ? overrideData : null) || savedFarm || farmData || defaultBaselineFarm;
+
     setLoadingPlan(true);
     setPlanError(null);
 
+    // Guaranteed minimum visual feedback duration (350ms) so fast localhost responses
+    // show a visible loading state to users
+    const minDelay = new Promise((resolve) => setTimeout(resolve, 350));
+
     try {
-      const result = await generatePlan(dataToPlan);
+      const [result] = await Promise.all([
+        generatePlan(dataToPlan),
+        minDelay,
+      ]);
       setPlanResult(result);
+      setPlanError(null);
     } catch (err) {
+      await minDelay;
       setPlanError(err);
+      setPlanResult(null);
     } finally {
       setLoadingPlan(false);
     }
@@ -78,11 +113,12 @@ function App() {
     setFarmData(data);
     saveFarmDataToStorage(data);
     setNotification(
-      message || "Farm parameters successfully validated by server and saved to workspace."
+      message || "Farm details successfully saved to workspace."
     );
     // Automatically trigger agricultural plan evaluation for the updated farm
     handleGeneratePlan(data);
-    setActivePage("Dashboard");
+    setActivePage("Crop Planner");
+    setPlannerSubTab("recommendations");
   }
 
   function handleFarmReset() {
@@ -93,63 +129,79 @@ function App() {
     setNotification(null);
   }
 
-  function renderPage() {
-    switch (activePage) {
-      case "Overview":
-      case "Dashboard":
-        return (
-          <Dashboard
-            onNavigate={setActivePage}
-            farmData={farmData}
-            planResult={planResult}
-            loadingPlan={loadingPlan}
-            planError={planError}
-            onGeneratePlan={() => handleGeneratePlan()}
-          />
-        );
+  function renderCropPlannerContent() {
+    return (
+      <div className="page-content">
+        {/* Simplified Sub-Navigation Pills */}
+        <div className="planner-subnav-bar" role="tablist" aria-label="Crop Planner Sections">
+          <button
+            type="button"
+            className={`subnav-pill ${plannerSubTab === "recommendations" ? "active" : ""}`}
+            onClick={() => setPlannerSubTab("recommendations")}
+            role="tab"
+            aria-selected={plannerSubTab === "recommendations"}
+          >
+            <span className="material-symbols-outlined">psychiatry</span>
+            Recommended Crops
+          </button>
+          <button
+            type="button"
+            className={`subnav-pill ${plannerSubTab === "water" ? "active" : ""}`}
+            onClick={() => setPlannerSubTab("water")}
+            role="tab"
+            aria-selected={plannerSubTab === "water"}
+          >
+            <span className="material-symbols-outlined">water_drop</span>
+            Water Planning
+          </button>
+          <button
+            type="button"
+            className={`subnav-pill ${plannerSubTab === "market" ? "active" : ""}`}
+            onClick={() => setPlannerSubTab("market")}
+            role="tab"
+            aria-selected={plannerSubTab === "market"}
+          >
+            <span className="material-symbols-outlined">trending_up</span>
+            Market Trends
+          </button>
+          <button
+            type="button"
+            className={`subnav-pill ${plannerSubTab === "scenario" ? "active" : ""}`}
+            onClick={() => setPlannerSubTab("scenario")}
+            role="tab"
+            aria-selected={plannerSubTab === "scenario"}
+          >
+            <span className="material-symbols-outlined">science</span>
+            Scenario Lab
+          </button>
+        </div>
 
-      case "Farm Details":
-        return (
-          <div className="page-content farm-details-page-content">
-            <FarmForm
-              key={
-                farmData
-                  ? `${farmData.areaAcres}-${farmData.soilType}-${farmData.availableWaterM3}-${farmData.season}`
-                  : "empty"
-              }
-              onSubmit={handleFarmSubmit}
-              onReset={handleFarmReset}
-              initialData={farmData}
-            />
-          </div>
-        );
-
-      case "Crop Recommendations":
-        return (
-          <div className="page-content">
+        {plannerSubTab === "recommendations" && (
+          <div>
             <div className="page-header">
               <div>
-                <p className="breadcrumb">Workspace / Crop Recommendations</p>
+                <p className="breadcrumb">Workspace / Crop Planner</p>
                 <h1 className="page-title">Crop Recommendations</h1>
                 <p className="page-subtitle">
-                  Compare candidate crops against your farm conditions.
+                  Compare candidate crops against your soil, rainfall, water supply, and budget.
                 </p>
               </div>
 
               <button
+                type="button"
                 className="primary-button hero-plan-cta"
                 onClick={() => handleGeneratePlan()}
                 disabled={loadingPlan}
               >
-                <span className="material-symbols-outlined">
+                <span className={`material-symbols-outlined ${loadingPlan ? "spin-icon" : ""}`}>
                   {loadingPlan ? "sync" : "analytics"}
                 </span>
                 <span>
                   {loadingPlan
-                    ? "Evaluating Engine..."
+                    ? "Checking Farm Plan..."
                     : planResult
-                    ? "Re-run Evaluation"
-                    : "Run Agronomic Evaluation"}
+                    ? "Re-run Farm Plan"
+                    : "Create My Farm Plan"}
                 </span>
               </button>
             </div>
@@ -160,33 +212,38 @@ function App() {
                 loading={loadingPlan}
                 error={planError}
                 onRegenerate={() => handleGeneratePlan()}
-                onEditFarm={() => setActivePage("Farm Details")}
+                onEditFarm={() => handleNavigate("My Farm")}
               />
             ) : (
               <section className="panel">
+                <div className="farmer-alert-box info" style={{ marginBottom: "20px" }}>
+                  <span className="material-symbols-outlined farmer-alert-icon">info</span>
+                  <div className="farmer-alert-text">
+                    <strong>General Reference Data Only:</strong>
+                    <span>
+                      The benchmark crops below are standard national ICAR guidelines, not your personalized farm recommendations.
+                      To calculate which crops are feasible for your specific soil ({farmData ? farmData.soilType : "Loamy"}), water reserve ({farmData ? `${farmData.availableWaterM3.toLocaleString()} m³` : "3,000 m³"}), and budget ({farmData ? `₹${farmData.budget.toLocaleString()}` : "₹1,00,000"}), click <strong>&ldquo;Create My Farm Plan&rdquo;</strong> above.
+                    </span>
+                  </div>
+                </div>
+
                 <div className="panel-heading">
                   <div>
-                    <span className="eyebrow">FIELD PROFILE</span>
-                    <h2>
-                      {farmData
-                        ? `Farm Profile: ${farmData.location || "Custom"}`
-                        : "Demonstration Farm Profile"}
-                    </h2>
+                    <span className="eyebrow">GENERIC REFERENCE BENCHMARKS</span>
+                    <h2>General Regional Crop Reference Matrix (ICAR Data)</h2>
                     <p>
-                      {farmData
-                        ? `${farmData.areaAcres} acres · ${farmData.soilType} soil · ${farmData.availableWaterM3.toLocaleString()} m³ water · ${farmData.season} season · ₹${farmData.budget.toLocaleString()} budget`
-                        : "Using standard baseline inputs (5.0 acres, Loamy soil, 5,000 m³ water). Configure your farm in Farm Details to customize."}
+                      Standard regional agronomic benchmarks for comparison. This is generic reference data and is NOT a personalized recommendation for your farm.
                     </p>
                   </div>
                   <button
                     className="secondary-button"
-                    onClick={() => setActivePage("Farm Details")}
+                    onClick={() => handleNavigate("My Farm")}
                   >
-                    {farmData ? "Edit parameters" : "Configure farm"} →
+                    {farmData ? "Edit Farm Parameters" : "Configure Farm"} →
                   </button>
                 </div>
 
-                <h3>Agronomic Reference Matrix (Sample Reference Data)</h3>
+                <h3>General Agronomic Reference Benchmarks</h3>
                 <div className="data-table-container">
                   <table className="data-table">
                     <thead>
@@ -202,7 +259,7 @@ function App() {
                     <tbody>
                       <tr>
                         <td><strong>Rice (Paddy)</strong></td>
-                        <td>Grain</td>
+                        <td>Grain (Reference)</td>
                         <td>120–150 days</td>
                         <td>High (~1,150 mm)</td>
                         <td>2.0 t/ac</td>
@@ -210,7 +267,7 @@ function App() {
                       </tr>
                       <tr>
                         <td><strong>Wheat</strong></td>
-                        <td>Cereal</td>
+                        <td>Cereal (Reference)</td>
                         <td>110–140 days</td>
                         <td>Medium (~450 mm)</td>
                         <td>1.8 t/ac</td>
@@ -218,7 +275,7 @@ function App() {
                       </tr>
                       <tr>
                         <td><strong>Maize</strong></td>
-                        <td>Grain</td>
+                        <td>Grain (Reference)</td>
                         <td>90–120 days</td>
                         <td>Medium (~520 mm)</td>
                         <td>2.0 t/ac</td>
@@ -226,7 +283,7 @@ function App() {
                       </tr>
                       <tr>
                         <td><strong>Pearl Millets</strong></td>
-                        <td>Cereal (Drought-Resilient)</td>
+                        <td>Cereal (Reference)</td>
                         <td>75–100 days</td>
                         <td>Low (~280 mm)</td>
                         <td>0.9 t/ac</td>
@@ -237,19 +294,18 @@ function App() {
                 </div>
 
                 <p className="sample-notice">
-                  Click &ldquo;Run Agronomic Evaluation&rdquo; above to run real 4-gate feasibility checking (Season, Soil, Water, Budget) against ICAR benchmark datasets.
+                  <strong>Reference Information:</strong> Generic benchmark figures from ICAR crop production guides. Click &ldquo;Create My Farm Plan&rdquo; above to run 4-gate feasibility checking (Season, Soil, Water, Budget) and view your verified crop plan.
                 </p>
               </section>
             )}
           </div>
-        );
+        )}
 
-      case "Water Optimization":
-        return (
-          <div className="page-content">
+        {plannerSubTab === "water" && (
+          <div>
             <div className="page-header">
               <div>
-                <p className="breadcrumb">Workspace / Water Optimization</p>
+                <p className="breadcrumb">Workspace / Crop Planner / Water</p>
                 <h1 className="page-title">Water Optimization</h1>
                 <p className="page-subtitle">
                   Plan irrigation within your available volumetric water budget.
@@ -279,7 +335,7 @@ function App() {
                 </div>
                 <button
                   className="secondary-button"
-                  onClick={() => setActivePage("Farm Details")}
+                  onClick={() => handleNavigate("My Farm")}
                 >
                   Configure water availability →
                 </button>
@@ -291,7 +347,7 @@ function App() {
                     ? `${Math.round(planResult.water.allocated_m3).toLocaleString()} m³ / ${Math.round(planResult.water.total_available_m3).toLocaleString()} m³`
                     : farmData
                     ? `${farmData.availableWaterM3.toLocaleString()} m³`
-                    : "5,000 m³"}
+                    : "3,000 m³"}
                 </strong>
                 <span>
                   {planResult?.water
@@ -354,18 +410,17 @@ function App() {
               </div>
 
               <p className="sample-notice">
-                <strong>Disclaimer:</strong> Source breakdown is illustrative. Dynamic mathematical water allocation models (linear programming / knapsack water optimization) will be connected during the optimization phase.
+                <strong>Disclaimer:</strong> Source breakdown is illustrative based on standard regional canal and aquifer models.
               </p>
             </section>
           </div>
-        );
+        )}
 
-      case "Market Insights":
-        return (
-          <div className="page-content">
+        {plannerSubTab === "market" && (
+          <div>
             <div className="page-header">
               <div>
-                <p className="breadcrumb">Workspace / Market Insights</p>
+                <p className="breadcrumb">Workspace / Crop Planner / Market</p>
                 <h1 className="page-title">Market Insights</h1>
                 <p className="page-subtitle">
                   Regional commodity pricing signals and trade trends.
@@ -405,15 +460,14 @@ function App() {
               </div>
 
               <p className="sample-notice">
-                <strong>Disclaimer:</strong> Illustrative trend data compiled for demonstration. Live Agmarknet / APMC API services will be integrated in later phases.
+                <strong>Disclaimer:</strong> Illustrative trend data compiled for demonstration based on benchmark modal prices.
               </p>
             </section>
           </div>
-        );
+        )}
 
-      case "Scenario Lab":
-        return (
-          <div className="page-content">
+        {plannerSubTab === "scenario" && (
+          <div>
             <section className="panel">
               <div className="panel-heading">
                 <div>
@@ -451,21 +505,65 @@ function App() {
               </div>
 
               <p className="sample-notice">
-                <strong>Disclaimer:</strong> Scenario Lab simulation models will connect in subsequent phases. Real-time Monte Carlo yield simulations and linear sensitivity calculations will be integrated with the optimization engine.
+                <strong>Disclaimer:</strong> Scenario simulations evaluate farm resilience against climatic deficit and cost inflation.
               </p>
             </section>
           </div>
+        )}
+      </div>
+    );
+  }
+
+  function renderPage() {
+    switch (activePage) {
+      case "Home":
+      case "Overview":
+      case "Dashboard":
+        return (
+          <Dashboard
+            onNavigate={handleNavigate}
+            farmData={farmData}
+            planResult={planResult}
+            loadingPlan={loadingPlan}
+            planError={planError}
+            onGeneratePlan={() => handleGeneratePlan()}
+          />
         );
 
+      case "My Farm":
+      case "Farm Details":
+        return (
+          <div className="page-content farm-details-page-content">
+            <FarmForm
+              key={
+                farmData
+                  ? `${farmData.areaAcres}-${farmData.soilType}-${farmData.availableWaterM3}-${farmData.season}`
+                  : "empty"
+              }
+              onSubmit={handleFarmSubmit}
+              onReset={handleFarmReset}
+              initialData={farmData}
+            />
+          </div>
+        );
+
+      case "Crop Planner":
+      case "Crop Recommendations":
+      case "Water Optimization":
+      case "Market Insights":
+      case "Scenario Lab":
+        return renderCropPlannerContent();
+
+      case "My Plans":
       case "Planning History":
         return (
           <div className="page-content">
             <div className="page-header">
               <div>
-                <p className="breadcrumb">Workspace / Planning History</p>
-                <h1 className="page-title">Planning History</h1>
+                <p className="breadcrumb">Workspace / My Plans</p>
+                <h1 className="page-title">My Plans</h1>
                 <p className="page-subtitle">
-                  Review historical farm planning sessions and saved configurations.
+                  Review your saved farm plans and previous recommendations.
                 </p>
               </div>
             </div>
@@ -585,7 +683,16 @@ function App() {
         );
 
       default:
-        return <Dashboard onNavigate={setActivePage} farmData={farmData} />;
+        return (
+          <Dashboard
+            onNavigate={handleNavigate}
+            farmData={farmData}
+            planResult={planResult}
+            loadingPlan={loadingPlan}
+            planError={planError}
+            onGeneratePlan={() => handleGeneratePlan()}
+          />
+        );
     }
   }
 
@@ -594,12 +701,12 @@ function App() {
   // 1. Session restore in progress — show a minimal spinner
   if (authLoading) {
     return (
-      <div className="auth-splash" aria-label="Loading CropWise" aria-busy="true">
+      <div className="auth-splash" aria-label="Loading Quantum Agri" aria-busy="true">
         <div className="auth-splash-inner">
           <div className="auth-brand-icon">
             <span className="material-symbols-outlined">eco</span>
           </div>
-          <p className="auth-splash-name">CropWise</p>
+          <p className="auth-splash-name">Quantum Agri</p>
           <span className="auth-spinner auth-spinner--lg" aria-hidden="true" />
         </div>
       </div>
@@ -641,11 +748,7 @@ function App() {
     <div className="app-layout">
       <Sidebar
         activePage={activePage}
-        onNavigate={(page) => {
-          if (pages.includes(page)) {
-            setActivePage(page);
-          }
-        }}
+        onNavigate={handleNavigate}
         farmData={farmData}
         user={user}
         onLogout={handleLogout}
@@ -655,7 +758,7 @@ function App() {
         <TopHeader
           activePage={activePage}
           farmData={farmData}
-          onNavigate={setActivePage}
+          onNavigate={handleNavigate}
           user={user}
           onLogout={handleLogout}
         />

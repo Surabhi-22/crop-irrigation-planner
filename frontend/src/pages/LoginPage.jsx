@@ -1,5 +1,5 @@
 /**
- * CropWise — Login Page
+ * Quantum Agri — Login Page
  *
  * Email + password sign-in, Google OAuth, and a link to Sign Up.
  * All auth is delegated to Supabase — no mock credentials accepted.
@@ -69,11 +69,11 @@ export default function LoginPage({ onNavigateToSignup, onNavigateToForgot, onAu
           <div className="auth-brand-icon">
             <span className="material-symbols-outlined">eco</span>
           </div>
-          <h1 className="auth-brand-name">CropWise</h1>
+          <h1 className="auth-brand-name">Quantum Agri</h1>
           <p className="auth-brand-sub">AGRICULTURAL INTELLIGENCE</p>
           <div className="auth-brand-divider" />
           <p className="auth-brand-tagline">
-            Predict. Optimize. Grow Smarter.
+            Smarter Farming. Better Harvests.
           </p>
           <div className="auth-brand-features">
             <div className="auth-feature">
@@ -98,7 +98,7 @@ export default function LoginPage({ onNavigateToSignup, onNavigateToForgot, onAu
           <div className="auth-card-header">
             <h2 className="auth-card-title">Welcome back</h2>
             <p className="auth-card-subtitle">
-              Sign in to your CropWise workspace
+              Sign in to your Quantum Agri workspace
             </p>
           </div>
 

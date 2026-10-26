@@ -1,5 +1,5 @@
 /**
- * CropWise — Forgot Password Page
+ * Quantum Agri — Forgot Password Page
  *
  * Sends a Supabase password-reset email. Displays clear feedback
  * whether Supabase is configured or not.
@@ -50,11 +50,11 @@ export default function ForgotPasswordPage({ onNavigateToLogin }) {
           <div className="auth-brand-icon">
             <span className="material-symbols-outlined">eco</span>
           </div>
-          <h1 className="auth-brand-name">CropWise</h1>
+          <h1 className="auth-brand-name">Quantum Agri</h1>
           <p className="auth-brand-sub">AGRICULTURAL INTELLIGENCE</p>
           <div className="auth-brand-divider" />
           <p className="auth-brand-tagline">
-            Predict. Optimize. Grow Smarter.
+            Smarter Farming. Better Harvests.
           </p>
         </div>
       </div>

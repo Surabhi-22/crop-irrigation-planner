@@ -1,5 +1,5 @@
 /**
- * CropWise — Auth Context
+ * Quantum Agri — Auth Context
  *
  * Provides { user, session, loading } to the entire app and restores
  * the user's session on page reload via Supabase's built-in persistence.

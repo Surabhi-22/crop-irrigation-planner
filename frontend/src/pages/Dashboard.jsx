@@ -41,7 +41,26 @@ export default function Dashboard({
   onGeneratePlan,
 }) {
   const planSectionRef = useRef(null);
-  const feasibleCount = planResult?.all_feasible_crops?.length;
+  const feasibleCrops =
+    planResult?.all_feasible_crops || planResult?.feasible_crops || [];
+  const feasibleCount = feasibleCrops.length;
+
+  let feasibilityStatus;
+  let feasibilityDescription;
+
+  if (loadingPlan) {
+    feasibilityStatus = "Calculating...";
+    feasibilityDescription = "Evaluating crop suitability...";
+  } else if (planResult && feasibleCount > 0) {
+    feasibilityStatus = "Plan Ready";
+    feasibilityDescription = `${feasibleCount} crop(s) meet all conditions`;
+  } else if (planError || (planResult && feasibleCount === 0)) {
+    feasibilityStatus = "Needs Adjustment";
+    feasibilityDescription = "No crops match all conditions; update farm parameters";
+  } else {
+    feasibilityStatus = "Not Generated";
+    feasibilityDescription = "Click button below to find crops";
+  }
 
   const handleGenerateClick = () => {
     if (typeof onGeneratePlan === "function") {
@@ -55,11 +74,11 @@ export default function Dashboard({
 
   const metrics = [
     {
-      title: "Cultivation Area",
-      value: farmData ? `${farmData.areaAcres} acres` : "5 acres",
+      title: "Land Area",
+      value: farmData ? `${farmData.areaAcres} Acres` : "5 Acres",
       description: farmData
-        ? `Saved area${farmData.location ? ` (${farmData.location})` : ""}`
-        : "Example cultivation area (sample)",
+        ? `Location: ${farmData.location || "Custom"}`
+        : "Standard baseline area (sample)",
       icon: "▧",
     },
     {
@@ -68,26 +87,24 @@ export default function Dashboard({
         ? `${farmData.availableWaterM3.toLocaleString()} m³`
         : "3,000 m³",
       description: farmData
-        ? "Saved irrigation quota"
-        : "Example available water (sample)",
+        ? "Seasonal water quota"
+        : "Standard baseline water quota",
       icon: "💧",
     },
     {
-      title: "Expected Rainfall",
+      title: "Expected Rain",
       value: farmData
         ? `${farmData.expectedRainfallMm.toLocaleString()} mm`
         : "650 mm",
       description: farmData
-        ? `Seasonal norm (${farmData.season})`
-        : "Example seasonal rainfall (sample)",
+        ? `Season: ${farmData.season}`
+        : "Standard monsoon rainfall",
       icon: "☀",
     },
     {
-      title: "Feasible Options",
-      value: planResult ? String(feasibleCount) : "4",
-      description: planResult
-        ? `${feasibleCount} crop(s) satisfy all gates`
-        : "Reference cultivars available",
+      title: "Feasible Crops",
+      value: feasibilityStatus,
+      description: feasibilityDescription,
       icon: "✳",
     },
   ];
@@ -96,10 +113,10 @@ export default function Dashboard({
     <div className="dashboard-content">
       <header className="page-header">
         <div>
-          <p className="breadcrumb">Workspace / Dashboard</p>
-          <h1 className="page-title">Crop & Irrigation Planner</h1>
+          <p className="breadcrumb">Workspace / Home</p>
+          <h1 className="page-title">Quantum Agri Farm Planner</h1>
           <p className="page-subtitle">
-            Plan better crops. Use every drop wisely.
+            Smarter Farming. Better Harvests.
           </p>
         </div>
 
@@ -107,46 +124,47 @@ export default function Dashboard({
           <span className="status-dot" />
           {farmData
             ? `Active Farm: ${farmData.location || "Configured"} (${farmData.season})`
-            : "Planning workspace (Sample Mode)"}
+            : "Demo Farm Profile (Ready to customize)"}
         </div>
       </header>
 
       <section className="hero-banner">
         <div className="hero-content">
-          <span className="eyebrow">AGRICULTURAL INTELLIGENCE WORKSPACE</span>
+          <span className="eyebrow">SIMPLE &amp; SMART CROP PLANNING</span>
 
-          <h2>Plan crops with real agronomic models.</h2>
+          <h2>Plan your next harvest with confidence.</h2>
 
           <p>
-            Evaluate crop suitability, allocate volumetric water quotas, and compute
-            indicative yields and net margins based on ICAR benchmark standards.
+            Find the most profitable crops suited for your soil, rainfall, water supply,
+            and budget — with exact cost and harvest estimates.
           </p>
 
           <div className="hero-actions">
             <button
               id="generate-plan-btn"
+              type="button"
               className="primary-button hero-plan-cta"
               onClick={handleGenerateClick}
               disabled={loadingPlan}
               aria-busy={loadingPlan}
             >
-              <span className="material-symbols-outlined">
+              <span className={`material-symbols-outlined ${loadingPlan ? "spin-icon" : ""}`}>
                 {loadingPlan ? "sync" : "analytics"}
               </span>
               <span>
                 {loadingPlan
-                  ? "Evaluating Feasibility..."
-                  : planResult
-                  ? "Re-run Crop & Water Plan"
-                  : "Generate Crop & Irrigation Plan"}
+                  ? "Creating Your Farm Plan..."
+                  : planResult && feasibleCount > 0
+                  ? "Re-run My Farm Plan"
+                  : "Create My Farm Plan"}
               </span>
             </button>
 
             <button
               className="secondary-button"
-              onClick={() => onNavigate("Farm Details")}
+              onClick={() => onNavigate("My Farm")}
             >
-              {farmData ? "Edit Farm Parameters" : "Configure Farm"} <span>→</span>
+              {farmData ? "Update Farm Details" : "Enter Farm Details"} <span>→</span>
             </button>
           </div>
 
@@ -154,43 +172,38 @@ export default function Dashboard({
           {loadingPlan && (
             <div className="hero-plan-feedback loading" role="status" aria-live="polite">
               <span className="material-symbols-outlined spin-icon">sync</span>
-              <span>Evaluating 4-gate agronomic feasibility against ICAR models...</span>
+              <span>Calculating crop suitability, water needs, and net profit for your farm...</span>
             </div>
           )}
 
-          {!loadingPlan && planError && (
+          {!loadingPlan && (planError || (planResult && feasibleCount === 0)) && (
             <div className="hero-plan-feedback error" role="alert">
               <span className="material-symbols-outlined">warning</span>
               <div className="feedback-text">
-                <strong>Agronomic Constraint Notice:</strong>{" "}
+                <strong>Farm Planning Notice:</strong>{" "}
                 <span>
-                  {planError.body?.detail?.message ||
-                    planError.message ||
-                    "Unable to find feasible crops under current constraints."}
+                  {planError?.body?.detail?.message ||
+                    planError?.message ||
+                    "No crops match all current farm conditions. Try adjusting your water quota or budget."}
                 </span>
               </div>
               <button
                 type="button"
                 className="feedback-scroll-btn"
-                onClick={() =>
-                  planSectionRef.current?.scrollIntoView({
-                    behavior: "smooth",
-                    block: "start",
-                  })
-                }
+                onClick={() => onNavigate("My Farm")}
               >
-                View Suggestions ↓
+                Adjust Farm Details →
               </button>
             </div>
           )}
 
-          {!loadingPlan && planResult && (
+          {!loadingPlan && planResult && feasibleCount > 0 && (
             <div className="hero-plan-feedback success">
               <span className="material-symbols-outlined">check_circle</span>
               <div className="feedback-text">
-                <strong>Plan Generated:</strong> Top recommendation is{" "}
-                <strong>{planResult.top_recommendation?.name}</strong> (
-                {planResult.all_feasible_crops?.length} passing options).
+                <strong>Plan Ready:</strong> Top crop is{" "}
+                <strong>{planResult.top_recommendation?.name}</strong> with{" "}
+                {feasibleCount} suitable crop option(s).
               </div>
               <button
                 type="button"
@@ -202,7 +215,7 @@ export default function Dashboard({
                   })
                 }
               >
-                View Plan Breakdown ↓
+                View Crop Plan Below ↓
               </button>
             </div>
           )}
@@ -308,9 +321,9 @@ export default function Dashboard({
 
           <button
             className="primary-button"
-            onClick={() => onNavigate("Farm Details")}
+            onClick={() => onNavigate("My Farm")}
           >
-            {farmData ? "Edit farm details" : "Configure farm"} <span>→</span>
+            {farmData ? "Update farm details" : "Configure farm"} <span>→</span>
           </button>
         </article>
 
@@ -346,7 +359,7 @@ export default function Dashboard({
 
           <button
             className="secondary-button"
-            onClick={() => onNavigate("Water Optimization")}
+            onClick={() => onNavigate("Crop Planner")}
           >
             Explore water planning →
           </button>
@@ -357,19 +370,19 @@ export default function Dashboard({
         <section className="panel crop-panel">
           <div className="panel-heading">
             <div>
-              <span className="eyebrow">CROP EXPLORER</span>
-              <h2>Compare reference crop options</h2>
+              <span className="eyebrow">GENERIC REFERENCE BENCHMARKS</span>
+              <h2>General regional crop benchmarks</h2>
               <p>
-                Initial reference information. Suitability must be evaluated
-                using farm conditions and model outputs.
+                Standard agronomic benchmark data for regional reference only.
+                This is not a personalized farm plan — click &ldquo;Create My Farm Plan&rdquo; above to calculate actual feasibility.
               </p>
             </div>
 
             <button
               className="secondary-button"
-              onClick={() => onNavigate("Crop Recommendations")}
+              onClick={() => onNavigate("Crop Planner")}
             >
-              View recommendations →
+              View benchmark table →
             </button>
           </div>
 
@@ -378,7 +391,7 @@ export default function Dashboard({
               <article className="crop-card" key={crop.name}>
                 <div className="crop-card-top">
                   <div className="crop-symbol">🌿</div>
-                  <span className="crop-type">{crop.type}</span>
+                  <span className="crop-type">{crop.type} (Reference)</span>
                 </div>
 
                 <h3>{crop.name}</h3>
@@ -399,15 +412,15 @@ export default function Dashboard({
           </div>
 
           <p className="sample-notice">
-            Crop durations and water-demand categories are indicative examples.
-            Click &ldquo;Generate Crop &amp; Irrigation Plan&rdquo; above to run real feasibility checks.
+            <strong>General Reference Only:</strong> Crop durations and water categories are standard ICAR benchmarks.
+            Click &ldquo;Create My Farm Plan&rdquo; above to run real feasibility checks against your farm conditions.
           </p>
         </section>
       )}
 
       <footer className="dashboard-footer">
-        <span>CropWise · Crop & Irrigation Planner</span>
-        <span>Predict. Optimize. Grow Smarter.</span>
+        <span>Quantum Agri · Crop & Irrigation Planner</span>
+        <span>Smarter Farming. Better Harvests.</span>
       </footer>
     </div>
   );
