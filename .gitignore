@@ -219,6 +219,26 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
+
+# Custom project additions
+.venv/
+venv/
+env/
+ENV/
+.env
+.env.*
+*.pem
+*.key
+*.token
+credentials.json
+secrets.json
+Thumbs.db
+ehthumbs.db
+desktop.ini
+*.tmp
+*.bak
+*.swp
+
 # Environment variables and secrets
 .env
 .env.*

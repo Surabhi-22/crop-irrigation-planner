@@ -1,0 +1,37 @@
+States,Soil_Type,Geographical_Region,Climate_Zone,Latitude,Longitude,Precipitation_mm,Avg_Summer_Temp_C,Avg_Winter_Temp_C,Irrigation_Coverage_%,Groundwater_Availability,Cropping_Intensity_%,Water_Stress_Index
+Andhra Pradesh,Red & Black Soil,Eastern Ghats/Coastal Plains,Tropical Wet-Dry,15.9129,79.74,1100.0,30,20,35,Medium,140,Medium
+Arunachal Pradesh,Mountain Soil,Eastern Himalayas,Humid Subtropical,28.218,94.7278,3000.0,22,5,20,Low,110,Low
+Assam,Alluvial Soil,Brahmaputra Valley,Humid Subtropical,26.2006,92.9376,2500.0,34,18,80,High,170,Low
+Bihar,Alluvial Soil,Indo-Gangetic Plains,Subtropical,25.0961,85.3131,1100.0,34,18,80,High,170,Medium
+Chhattisgarh,Red & Laterite Soil,Central India/Deccan Plateau,Tropical Wet-Dry,21.2787,81.8661,1300.0,34,18,40,Medium,140,Medium
+Goa,Laterite Soil,Western Coastal Plains,Tropical Monsoon,15.2993,74.124,2800.0,30,20,35,Medium,130,Low
+Gujarat,Black & Alluvial Soil,"Western India (Kathiawar, Kutch)",Arid/Tropical Wet-Dry,22.2587,71.1924,900.0,34,18,80,High,170,High
+Haryana,Alluvial Soil,Northern Plains,Subtropical Semi-Arid,29.0588,76.0856,600.0,34,18,80,High,170,High
+Himachal Pradesh,Mountain Soil,Western Himalayas,Humid Subtropical/Alpine,31.1048,77.1734,1800.0,22,5,20,Low,110,Medium
+Jharkhand,Red & Laterite Soil,Chota Nagpur Plateau,Tropical Wet-Dry,23.6102,85.2799,1100.0,34,18,40,Medium,140,Medium
+Karnataka,Red & Black Soil,Deccan Plateau/Western Ghats,Tropical Monsoon,15.3173,75.7139,1400.0,34,18,40,Medium,140,Medium
+Kerala,Laterite Soil,Malabar Coast/Western Ghats,Tropical Monsoon,10.8505,76.2711,3000.0,34,18,35,Medium,125,Low
+Madhya Pradesh,Black Soil,Central India/Deccan Plateau,Tropical Wet-Dry,22.9734,78.6569,1100.0,34,18,40,Medium,140,Medium
+Maharashtra,Black Soil,Deccan Plateau/Western Ghats,Tropical Monsoon,19.7515,75.7139,1200.0,34,18,40,Medium,140,Medium
+Manipur,Red & Yellow Soil,Eastern Hills,Humid Subtropical,24.6637,93.9063,2000.0,34,18,35,Medium,125,Low
+Meghalaya,Laterite & Red Soil,Khasi & Garo Hills,Humid Subtropical,25.467,91.3662,3500.0,34,18,35,Medium,125,Low
+Mizoram,Red & Yellow Soil,Lushai Hills,Humid Subtropical,23.1645,92.9376,2200.0,34,18,35,Medium,125,Low
+Nagaland,Red & Yellow Soil,Naga Hills,Humid Subtropical,26.1584,94.5624,2000.0,34,18,35,Medium,125,Low
+Odisha,Laterite & Red Soil,Eastern Ghats/Coastal Plains,Tropical Monsoon,20.9517,85.0985,1400.0,30,20,35,Medium,130,Medium
+Punjab,Alluvial Soil,Northern Plains,Subtropical Semi-Arid,31.1471,75.3412,600.0,34,18,80,High,170,High
+Rajasthan,Arid/Desert Soil,Thar Desert/Aravallis,Arid/Desert,27.0238,74.2179,400.0,38,14,60,Low,110,High
+Sikkim,Mountain Soil,Eastern Himalayas,Humid Subtropical/Alpine,27.533,88.5122,3000.0,22,5,20,Low,110,Low
+Tamil Nadu,Red Soil,Southern Plateau/Coromandel Coast,Tropical Wet-Dry,11.1271,78.6569,1000.0,34,18,40,Medium,140,Medium
+Telangana,Red & Black Soil,Deccan Plateau,Tropical Wet-Dry,18.1124,79.0193,1000.0,34,18,40,Medium,140,Medium
+Tripura,Laterite & Alluvial Soil,Tripura Hills,Humid Subtropical,23.9408,91.9882,2200.0,34,18,80,High,170,Low
+Uttar Pradesh,Alluvial Soil,Indo-Gangetic Plains,Subtropical,26.8467,80.9462,1000.0,34,18,80,High,170,Medium
+Uttarakhand,Mountain Soil,Central Himalayas,Humid Subtropical/Alpine,30.0668,79.0193,2000.0,22,5,20,Low,110,Low
+West Bengal,Alluvial & Laterite Soil,Gangetic Delta/Himalayan Foothills,Tropical Monsoon,22.9868,87.855,1800.0,22,5,80,High,170,Medium
+Andaman and Nicobar Islands,Alluvial Soil,Bay of Bengal/Islands,Tropical Wet,11.7401,92.6586,3000.0,32,12,35,Medium,125,High
+Chandigarh,Alluvial Soil,Northern Plains (Punjab-Haryana),Subtropical,30.7333,76.7794,1100.0,34,18,80,High,170,Medium
+Dadra and Nagar Haveli and Daman and Diu,Lateritic soil,Western India/Coastal Plains,Tropical Wet-Dry,20.1809,73.0169,2000.0,32,12,35,Medium,125,High
+Delhi,Alluvial Soil,Northern Plains (Yamuna Basin),Subtropical Semi-Arid,28.7041,77.1025,700.0,34,18,80,High,170,High
+Jammu and Kashmir,Alluvial Soil,Western Himalayas,Temperate/Alpine,33.7782,76.5762,1100.0,32,12,35,Medium,125,High
+Ladakh,Cold Desert Soil,Trans-Himalayas,Cold Desert/Alpine,34.1526,77.577,100.0,22,5,20,Low,110,High
+Lakshadweep,Coral & Sandy Soil,Islands (Arabian Sea),Tropical Maritime,10.5667,72.6417,1700.0,34,18,35,Medium,125,Medium
+Puducherry,Coastal Alluvial Soil,Coromandel Coast,Tropical Wet-Dry,11.9416,79.8083,1400.0,34,18,80,High,170,Medium
