@@ -3274,6 +3274,31 @@
   color: var(--color-primary-dark, #193c2d);
 }
 
+.auth-legal-links {
+  margin-top: 1.25rem;
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--color-text-muted, #70796f);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.auth-legal-links a {
+  color: var(--color-text-muted, #70796f);
+  text-decoration: underline;
+  transition: color 0.15s ease;
+}
+
+.auth-legal-links a:hover {
+  color: var(--color-primary, #245c43);
+}
+
+.auth-legal-divider {
+  opacity: 0.5;
+}
+
 /* Success state card */
 .auth-success-state {
   text-align: center;

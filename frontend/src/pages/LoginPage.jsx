@@ -273,6 +273,16 @@ export default function LoginPage({
               Sign up free
             </button>
           </p>
+
+          <div className="auth-legal-links">
+            <a href="/privacy.html" target="_blank" rel="noopener noreferrer">
+              Privacy Policy
+            </a>
+            <span className="auth-legal-divider">•</span>
+            <a href="/terms.html" target="_blank" rel="noopener noreferrer">
+              Terms of Service
+            </a>
+          </div>
         </div>
       </div>
     </div>
