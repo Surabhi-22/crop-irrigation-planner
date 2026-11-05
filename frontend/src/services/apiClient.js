@@ -6,9 +6,26 @@
  * via the VITE_API_BASE_URL environment variable.
  */
 
-const RAW_BASE_URL =
-  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL) ||
-  'http://127.0.0.1:8000';
+// Intelligent API base URL detection with production fallback:
+// 1. Explicit environment variable VITE_API_BASE_URL (preferred)
+// 2. Production fallback: If running on Vercel or any non-localhost host, target the deployed Render backend
+// 3. Localhost fallback: http://127.0.0.1:8000
+const getResolvedBaseUrl = () => {
+  const envUrl = typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL;
+  if (envUrl && typeof envUrl === 'string' && envUrl.trim()) {
+    return envUrl.trim();
+  }
+  if (typeof window !== 'undefined' && window.location) {
+    const host = window.location.hostname;
+    const isLocalhost = host === 'localhost' || host === '127.0.0.1' || host === '::1';
+    if (!isLocalhost && (host.includes('vercel.app') || !host.includes('127.0.0.1'))) {
+      return 'https://crop-irrigation-planner.onrender.com';
+    }
+  }
+  return 'http://127.0.0.1:8000';
+};
+
+const RAW_BASE_URL = getResolvedBaseUrl();
 
 // Strip any trailing slash to avoid double-slash route issues (e.g., http://127.0.0.1:8000//api/v1/...)
 const API_BASE_URL = RAW_BASE_URL.replace(/\/+$/, '');
@@ -68,13 +85,14 @@ export class NetworkError extends Error {
       originalError?.name === 'AbortError';
 
     const message = isTimeout
-      ? `Request timed out. The backend server at ${targetUrl} did not respond within the time limit.`
+      ? `Request timed out. The backend server at ${targetUrl} did not respond within the time limit. (If the server was idle, the cloud instance may be spinning up; please retry in a few moments).`
       : `Unable to reach the server at ${targetUrl}. Please check that the FastAPI backend is running and try again.`;
 
     super(message);
     this.name = 'NetworkError';
     this.originalError = originalError;
     this.targetUrl = targetUrl;
+    this.isTimeout = isTimeout;
   }
 }
 
@@ -86,7 +104,8 @@ export class NetworkError extends Error {
  * @param {string} [options.method='GET'] - HTTP method
  * @param {*}      [options.body]         - Request body (will be JSON-serialized)
  * @param {object} [options.headers]      - Additional headers
- * @param {number} [options.timeoutMs=15000] - Request timeout in milliseconds
+ * @param {number} [options.timeoutMs=45000] - Request timeout in milliseconds (45s default for cloud spin-up)
+ * @param {number} [options.retries=1]       - Number of automatic retries on timeout
  * @returns {Promise<*>} Parsed JSON response
  * @throws {ApiError}     On non-2xx HTTP responses
  * @throws {NetworkError} On network/connection failures or timeouts
@@ -96,49 +115,62 @@ export async function apiRequest(path, options = {}) {
     method = 'GET',
     body,
     headers = {},
-    timeoutMs = 15000,
+    timeoutMs = 45000,
+    retries = 1,
     ...rest
   } = options;
 
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
   const url = `${API_BASE_URL}${normalizedPath}`;
 
-  // Configure abort signal for timeout safety
-  let controller = null;
-  let signal = options.signal;
+  const executeFetch = async (currentAttempt = 0) => {
+    let controller = null;
+    let signal = options.signal;
 
-  if (!signal && typeof AbortController !== 'undefined') {
-    controller = new AbortController();
-    signal = controller.signal;
-  }
+    if (!signal && typeof AbortController !== 'undefined') {
+      controller = new AbortController();
+      signal = controller.signal;
+    }
 
-  let timer = null;
-  if (controller && timeoutMs > 0) {
-    timer = setTimeout(() => controller.abort(), timeoutMs);
-  }
+    let timer = null;
+    if (controller && timeoutMs > 0) {
+      timer = setTimeout(() => controller.abort(), timeoutMs);
+    }
 
-  const fetchOptions = {
-    method,
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-      ...headers,
-    },
-    signal,
-    ...rest,
+    const fetchOptions = {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        ...headers,
+      },
+      signal,
+      ...rest,
+    };
+
+    if (body !== undefined) {
+      fetchOptions.body = JSON.stringify(body);
+    }
+
+    try {
+      const response = await fetch(url, fetchOptions);
+      if (timer) clearTimeout(timer);
+      return response;
+    } catch (err) {
+      if (timer) clearTimeout(timer);
+      // Auto-retry once on Abort/Timeout if retries left
+      if (currentAttempt < retries && (err?.name === 'AbortError' || err?.name === 'TimeoutError')) {
+        return executeFetch(currentAttempt + 1);
+      }
+      throw new NetworkError(err, API_BASE_URL);
+    }
   };
-
-  if (body !== undefined) {
-    fetchOptions.body = JSON.stringify(body);
-  }
 
   let response;
   try {
-    response = await fetch(url, fetchOptions);
+    response = await executeFetch(0);
   } catch (err) {
-    throw new NetworkError(err, API_BASE_URL);
-  } finally {
-    if (timer) clearTimeout(timer);
+    throw err instanceof NetworkError ? err : new NetworkError(err, API_BASE_URL);
   }
 
   // Attempt to parse JSON regardless of status (FastAPI returns JSON error payloads)

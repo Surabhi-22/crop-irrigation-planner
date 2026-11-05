@@ -6,12 +6,13 @@
  */
 
 import { useState } from "react";
-import { signInWithEmail, signInWithGoogle } from "../lib/supabaseClient";
+import { signInWithEmail, signInWithGoogle, resendConfirmationEmail } from "../lib/supabaseClient";
 
 export default function LoginPage({
   onNavigateToSignup,
   onNavigateToForgot,
   onAuthSuccess,
+  onContinueAsGuest,
   oauthError,
 }) {
   const [email, setEmail] = useState("");
@@ -20,6 +21,8 @@ export default function LoginPage({
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
+  const [resendStatus, setResendStatus] = useState("");
+  const [resending, setResending] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
 
   const displayError = error || oauthError;
@@ -73,6 +76,27 @@ export default function LoginPage({
     }
   }
 
+  async function handleResendConfirmation() {
+    if (!email.trim()) {
+      setError("Please enter your email address above to receive the confirmation link.");
+      return;
+    }
+    setResending(true);
+    setResendStatus("");
+    try {
+      const { error: resendErr } = await resendConfirmationEmail(email.trim());
+      if (resendErr) {
+        setError(resendErr.message || "Failed to resend confirmation email.");
+      } else {
+        setResendStatus(`Verification link resent to ${email.trim()}. Please check your inbox and spam folder.`);
+      }
+    } catch (err) {
+      setError(err?.message || "Failed to resend confirmation email.");
+    } finally {
+      setResending(false);
+    }
+  }
+
   return (
     <div className="auth-layout">
       {/* ── Left branding panel ─────────────────────── */}
@@ -114,6 +138,13 @@ export default function LoginPage({
             </p>
           </div>
 
+          {resendStatus && (
+            <div className="auth-success-banner" role="status" style={{ marginBottom: "16px" }}>
+              <span className="material-symbols-outlined">check_circle</span>
+              <span>{resendStatus}</span>
+            </div>
+          )}
+
           {displayError && (
             <div className="auth-error-banner" role="alert">
               <span className="material-symbols-outlined">error</span>
@@ -123,6 +154,24 @@ export default function LoginPage({
                   <p style={{ margin: "6px 0 0 0", fontSize: "0.85rem", opacity: 0.95, lineHeight: 1.4 }}>
                     If you originally signed up with Google, use <strong>Continue with Google</strong> below. If you created an account with email, verify you clicked the confirmation link sent to your inbox.
                   </p>
+                )}
+                {(displayError.toLowerCase().includes("not confirmed") ||
+                  displayError.toLowerCase().includes("unconfirmed")) && (
+                  <div style={{ margin: "8px 0 0 0", fontSize: "0.85rem", opacity: 0.95, lineHeight: 1.4 }}>
+                    <p style={{ margin: "0 0 6px 0" }}>
+                      Please click the confirmation link sent to your inbox before signing in. Check your spam or junk folder if needed.
+                    </p>
+                    <button
+                      id="login-resend-confirmation-btn"
+                      type="button"
+                      className="auth-link"
+                      style={{ fontWeight: 600, textDecoration: "underline", color: "inherit", cursor: "pointer" }}
+                      onClick={handleResendConfirmation}
+                      disabled={resending}
+                    >
+                      {resending ? "Sending confirmation link…" : "Resend confirmation email →"}
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
@@ -271,10 +320,41 @@ export default function LoginPage({
             Continue with Google
           </button>
 
+          {/* Create Account Action Button */}
+          <div style={{ marginTop: "14px", textAlign: "center" }}>
+            <button
+              id="login-create-account-btn"
+              type="button"
+              className="secondary-button"
+              onClick={onNavigateToSignup}
+              style={{ width: "100%", justifyContent: "center", padding: "10px" }}
+            >
+              <span className="material-symbols-outlined">person_add</span>
+              Create Account
+            </button>
+          </div>
+
+          {/* Guest / Demo Workspace Access */}
+          {onContinueAsGuest && (
+            <div style={{ marginTop: "10px", textAlign: "center" }}>
+              <button
+                id="login-guest-btn"
+                type="button"
+                className="secondary-button"
+                onClick={onContinueAsGuest}
+                style={{ width: "100%", justifyContent: "center", padding: "10px" }}
+              >
+                <span className="material-symbols-outlined">explore</span>
+                Explore Demo Workspace as Guest
+              </button>
+            </div>
+          )}
+
           {/* Footer link */}
           <p className="auth-footer-text">
             Don't have an account?{" "}
             <button
+              id="login-signup-link"
               type="button"
               className="auth-link"
               onClick={onNavigateToSignup}

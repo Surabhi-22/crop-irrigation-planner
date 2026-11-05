@@ -123,9 +123,45 @@ export async function sendPasswordReset(email) {
 }
 
 /**
+ * Resend email confirmation / signup verification email.
+ */
+export async function resendConfirmationEmail(email) {
+  if (!supabase) return NOT_CONFIGURED_ERROR;
+  const emailRedirectTo =
+    env.VITE_APP_URL?.trim() ||
+    (typeof window !== "undefined" ? window.location.origin : "");
+
+  return supabase.auth.resend({
+    type: "signup",
+    email: email.trim(),
+    options: {
+      emailRedirectTo,
+    },
+  });
+}
+
+/**
+ * Update the authenticated user's profile metadata.
+ *
+ * @param {object} attributes - Attributes to update (e.g. { data: { full_name: "Farmer" } })
+ */
+export async function updateUserProfile(attributes) {
+  if (!supabase) return NOT_CONFIGURED_ERROR;
+  return supabase.auth.updateUser(attributes);
+}
+
+/**
  * Sign out the current user.
  */
 export async function signOut() {
+  try {
+    if (typeof sessionStorage !== "undefined") {
+      sessionStorage.removeItem("quantum_agri_guest_mode");
+      sessionStorage.removeItem("quantum_agri_auth_intent");
+    }
+  } catch {
+    // ignore
+  }
   if (!supabase) return NOT_CONFIGURED_ERROR;
   return supabase.auth.signOut();
 }
@@ -148,4 +184,46 @@ export function onAuthStateChange(callback) {
 export async function getSession() {
   if (!supabase) return { data: { session: null }, error: null };
   return supabase.auth.getSession();
+}
+
+/**
+ * Sets the active session in the Supabase client.
+ * Synchronizes token state when an authenticated session is returned (e.g. signup with autoconfirm).
+ *
+ * @param {{ access_token: string, refresh_token: string }} sessionData
+ */
+export async function setSession(sessionData) {
+  if (!supabase) return NOT_CONFIGURED_ERROR;
+  if (!sessionData?.access_token || !sessionData?.refresh_token) {
+    return { data: { session: null, user: null }, error: null };
+  }
+  return supabase.auth.setSession({
+    access_token: sessionData.access_token,
+    refresh_token: sessionData.refresh_token,
+  });
+}
+
+/**
+ * Request an SMS OTP for phone number authentication.
+ *
+ * @param {string} phone - Normalized E.164 phone number (e.g. "+919876543210")
+ */
+export async function requestPhoneOtp(phone) {
+  if (!supabase) return NOT_CONFIGURED_ERROR;
+  return supabase.auth.signInWithOtp({ phone });
+}
+
+/**
+ * Verify an SMS OTP for phone number authentication.
+ *
+ * @param {string} phone - Normalized E.164 phone number
+ * @param {string} token - 6-digit OTP code string
+ */
+export async function verifyPhoneOtp(phone, token) {
+  if (!supabase) return NOT_CONFIGURED_ERROR;
+  return supabase.auth.verifyOtp({
+    phone,
+    token: typeof token === "string" ? token.trim() : "",
+    type: "sms",
+  });
 }

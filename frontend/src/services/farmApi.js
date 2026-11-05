@@ -49,10 +49,25 @@ export function toBackendSchema(frontendData) {
       : frontendData.availableWater !== undefined
       ? frontendData.availableWater
       : frontendData.available_water_m3;
-  const budget =
-    frontendData.budget !== undefined
-      ? frontendData.budget
-      : frontendData.budget_inr;
+  const isUnconstrained =
+    frontendData.unconstrainedBudget === true ||
+    frontendData.isBudgetUnconstrained === true ||
+    frontendData.budget === null ||
+    frontendData.budget === 'unconstrained';
+
+  let budgetVal;
+  if (isUnconstrained) {
+    budgetVal = null;
+  } else {
+    const rawBudget =
+      frontendData.budget !== undefined
+        ? frontendData.budget
+        : frontendData.budget_inr;
+    budgetVal =
+      rawBudget === '' || rawBudget === null || rawBudget === undefined
+        ? null
+        : Number(rawBudget);
+  }
 
   return {
     area_acres: Number(area),
@@ -61,7 +76,7 @@ export function toBackendSchema(frontendData) {
     available_water_m3: Number(water),
     location: String(frontendData.location || '').trim(),
     season: String(frontendData.season || '').trim(),
-    budget_inr: Number(budget),
+    budget_inr: budgetVal,
   };
 }
 
@@ -76,6 +91,8 @@ export function toFrontendSchema(backendData) {
     return null;
   }
 
+  const isUnconstrained = backendData.budget_inr === null || backendData.budget_inr === undefined;
+
   return {
     areaAcres: Number(backendData.area_acres),
     soilType: String(backendData.soil_type),
@@ -83,7 +100,8 @@ export function toFrontendSchema(backendData) {
     availableWaterM3: Number(backendData.available_water_m3),
     location: String(backendData.location || ''),
     season: String(backendData.season),
-    budget: Number(backendData.budget_inr),
+    budget: isUnconstrained ? null : Number(backendData.budget_inr),
+    unconstrainedBudget: isUnconstrained,
   };
 }
 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import Sidebar from "./components/Sidebar";
 import TopHeader from "./components/TopHeader";
@@ -6,10 +6,19 @@ import FarmForm from "./components/FarmForm";
 import Dashboard from "./pages/Dashboard";
 import PlanResults from "./components/PlanResults";
 import { generatePlan } from "./services/farmApi";
+import { getJson } from "./services/apiClient";
 import {
   loadSavedFarmData,
   saveFarmDataToStorage,
   clearSavedFarmData,
+  loadUserFarmData,
+  saveUserFarmData,
+  clearUserFarmData,
+  resolveUserFarmData,
+  loadSavedPlanResult,
+  savePlanResultToStorage,
+  clearSavedPlanResult,
+  migrateGuestPlanToUser,
 } from "./services/farmStorage";
 
 // Auth
@@ -18,6 +27,8 @@ import { signOut } from "./lib/supabaseClient";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import SettingsPage from "./pages/SettingsPage";
+import WaterOptimization from "./pages/WaterOptimization";
 
 import "./App.css";
 
@@ -25,15 +36,15 @@ const defaultBaselineFarm = {
   areaAcres: 5.0,
   soilType: "Loamy",
   expectedRainfallMm: 650.0,
-  availableWaterM3: 5000.0,
-  location: "Bengaluru",
+  availableWaterM3: 4000.0,
+  location: "Bengaluru (Sample Farm)",
   season: "Kharif",
   budget: 100000.0,
 };
 
 function App() {
   // ── Auth state ────────────────────────────────────────
-  const { user, loading: authLoading, authError, clearAuthError } = useAuth();
+  const { user, loading: authLoading, authError, clearAuthError, setAuthSession } = useAuth();
   // "login" | "signup" | "forgot"
   const [authView, setAuthView] = useState(() => {
     try {
@@ -48,20 +59,90 @@ function App() {
     return "login";
   });
 
+  const [isGuest, setIsGuest] = useState(() => {
+    try {
+      return (
+        typeof window !== "undefined" &&
+        sessionStorage.getItem("quantum_agri_guest_mode") === "true"
+      );
+    } catch {
+      return false;
+    }
+  });
+
   // ── App page state ────────────────────────────────────
   const [activePage, setActivePage] = useState("Home");
   const [plannerSubTab, setPlannerSubTab] = useState("recommendations");
 
-  const [farmData, setFarmData] = useState(() => loadSavedFarmData());
+  const [farmData, setFarmData] = useState(() => {
+    return loadSavedFarmData();
+  });
   const [notification, setNotification] = useState(null);
 
-  const [planResult, setPlanResult] = useState(null);
+  // Separate real farm plan vs simulated baseline demonstration plan
+  const [realPlanResult, setRealPlanResult] = useState(() => {
+    return loadSavedPlanResult(null);
+  });
+  const [demoPlanResult, setDemoPlanResult] = useState(null);
+  const [isDemoActive, setIsDemoActive] = useState(false);
   const [loadingPlan, setLoadingPlan] = useState(false);
   const [planError, setPlanError] = useState(null);
 
+  const planResult = isDemoActive ? demoPlanResult : realPlanResult;
+
+  // ── Sync farm data & plan result with auth state ──────────────────────────
+  useEffect(() => {
+    if (authLoading) return;
+
+    if (user?.id) {
+      // 1. Authenticated: load user-scoped farm data or migrate guest data if first login
+      const { data: resolvedData, migrated } = resolveUserFarmData(user.id);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setFarmData(resolvedData);
+      if (migrated) {
+        setNotification("Guest farm workspace was successfully linked to your account.");
+      }
+
+      // 2. Migrate guest plan if present, then load user plan from sessionStorage
+      migrateGuestPlanToUser(user.id);
+      const userPlan = loadSavedPlanResult(user.id);
+      if (userPlan) {
+        setRealPlanResult(userPlan);
+      }
+
+      // 3. Ensure guest mode flag is cleared now that user is authenticated
+      try {
+        sessionStorage.removeItem("quantum_agri_guest_mode");
+      } catch {
+        // ignore
+      }
+      setIsGuest(false);
+    } else if (isGuest) {
+      // Guest mode: load anonymous farm data and plan result
+      setFarmData(loadSavedFarmData());
+      const guestPlan = loadSavedPlanResult(null);
+      if (guestPlan) {
+        setRealPlanResult(guestPlan);
+      }
+    } else {
+      // Logged out / unauthenticated: reset in-memory data to avoid leaking across accounts/guests
+      setFarmData(null);
+      setRealPlanResult(null);
+      setDemoPlanResult(null);
+      setIsDemoActive(false);
+    }
+  }, [user?.id, isGuest, authLoading]);
+
+  // Background cloud backend warm-up: pings Render health endpoint on initial app load
+  useEffect(() => {
+    getJson("/api/v1/health", { timeoutMs: 30000, retries: 0 }).catch(() => {
+      // Ignored: silent cloud instance spin-up in background
+    });
+  }, []);
+
   function handleNavigate(page) {
     if (page === "Water Optimization") {
-      setActivePage("Crop Planner");
+      setActivePage("Water Optimization");
       setPlannerSubTab("water");
     } else if (page === "Market Insights") {
       setActivePage("Crop Planner");
@@ -93,9 +174,9 @@ function App() {
         overrideData.area !== undefined ||
         overrideData.area_acres !== undefined);
 
-    const savedFarm = loadSavedFarmData();
+    const savedFarm = user?.id ? loadUserFarmData(user.id) : loadSavedFarmData();
     const dataToPlan =
-      (isFarmObject ? overrideData : null) || savedFarm || farmData || defaultBaselineFarm;
+      (isFarmObject ? overrideData : null) || farmData || savedFarm || defaultBaselineFarm;
 
     setLoadingPlan(true);
     setPlanError(null);
@@ -109,20 +190,68 @@ function App() {
         generatePlan(dataToPlan),
         minDelay,
       ]);
-      setPlanResult(result);
+      const mappedResult = {
+        ...result,
+        isDemonstration: false,
+        isSimulated: false,
+      };
+      setRealPlanResult(mappedResult);
+      savePlanResultToStorage(mappedResult, user?.id || null);
+      setIsDemoActive(false);
       setPlanError(null);
     } catch (err) {
       await minDelay;
       setPlanError(err);
-      setPlanResult(null);
+      // Keep previous plan if already loaded so error banner shows inline
     } finally {
       setLoadingPlan(false);
     }
   }
 
+  async function handleGenerateBaselineDemo() {
+    setLoadingPlan(true);
+    setPlanError(null);
+
+    const minDelay = new Promise((resolve) => setTimeout(resolve, 400));
+
+    try {
+      const [result] = await Promise.all([
+        generatePlan(defaultBaselineFarm),
+        minDelay,
+      ]);
+      const demoResult = {
+        ...result,
+        location: "Bengaluru (Sample Farm)",
+        isDemonstration: true,
+        isSimulated: true,
+        demonstrationLabel: "Simulated Demonstration Baseline Plan",
+      };
+      setDemoPlanResult(demoResult);
+      setIsDemoActive(true);
+      setPlanError(null);
+    } catch (err) {
+      await minDelay;
+      setPlanError(err);
+    } finally {
+      setLoadingPlan(false);
+    }
+  }
+
+  function handleSwitchToRealPlan() {
+    if (realPlanResult) {
+      setIsDemoActive(false);
+    } else if (farmData) {
+      handleGeneratePlan(farmData);
+    }
+  }
+
   function handleFarmSubmit(data, message) {
     setFarmData(data);
-    saveFarmDataToStorage(data);
+    if (user?.id) {
+      saveUserFarmData(user.id, data);
+    } else {
+      saveFarmDataToStorage(data);
+    }
     setNotification(
       message || "Farm details successfully saved to workspace."
     );
@@ -133,9 +262,17 @@ function App() {
   }
 
   function handleFarmReset() {
-    clearSavedFarmData();
+    if (user?.id) {
+      clearUserFarmData(user.id);
+      clearSavedPlanResult(user.id);
+    } else {
+      clearSavedFarmData();
+      clearSavedPlanResult(null);
+    }
     setFarmData(null);
-    setPlanResult(null);
+    setRealPlanResult(null);
+    setDemoPlanResult(null);
+    setIsDemoActive(false);
     setPlanError(null);
     setNotification(null);
   }
@@ -313,118 +450,25 @@ function App() {
         )}
 
         {plannerSubTab === "water" && (
-          <div>
-            <div className="page-header">
-              <div>
-                <p className="breadcrumb">Workspace / Crop Planner / Water</p>
-                <h1 className="page-title">Water Optimization</h1>
-                <p className="page-subtitle">
-                  Plan irrigation within your available volumetric water budget.
-                </p>
-              </div>
-
-              <button
-                className="secondary-button"
-                onClick={() => handleGeneratePlan()}
-                disabled={loadingPlan}
-              >
-                <span className="material-symbols-outlined">refresh</span>
-                {loadingPlan ? "Recalculating..." : "Recalculate Water"}
-              </button>
-            </div>
-
-            <section className="panel">
-              <div className="panel-heading">
-                <div>
-                  <span className="eyebrow">VOLUMETRIC BALANCE</span>
-                  <h2>Available irrigation water</h2>
-                  <p>
-                    {farmData
-                      ? `Calculated for ${farmData.areaAcres} acres in ${farmData.location || "your farm"} (${farmData.season} season).`
-                      : "Displaying baseline demonstration water budget."}
-                  </p>
-                </div>
-                <button
-                  className="secondary-button"
-                  onClick={() => handleNavigate("My Farm")}
-                >
-                  Configure water availability →
-                </button>
-              </div>
-
-              <div className="water-summary">
-                <strong>
-                  {planResult?.water
-                    ? `${Math.round(planResult.water.allocated_m3).toLocaleString()} m³ / ${Math.round(planResult.water.total_available_m3).toLocaleString()} m³`
-                    : farmData
-                    ? `${farmData.availableWaterM3.toLocaleString()} m³`
-                    : "3,000 m³"}
-                </strong>
-                <span>
-                  {planResult?.water
-                    ? `Allocated ${planResult.water.allocation_pct}% of irrigation reserve (${Math.round(planResult.water.remaining_m3).toLocaleString()} m³ remaining)`
-                    : farmData
-                    ? `From your saved farm details (${farmData.areaAcres} acres · ${farmData.soilType} soil · ${farmData.season} season)`
-                    : "Example value — enter your farm details to customize it"}
-                </span>
-              </div>
-
-              {planResult?.water && (
-                <div className="water-bar-wrapper" style={{ margin: "20px 0" }}>
-                  <div className="water-bar-labels">
-                    <span><strong>Allocated:</strong> {planResult.water.allocation_pct}%</span>
-                    <span><strong>Remaining Buffer:</strong> {Math.round(planResult.water.remaining_m3).toLocaleString()} m³</span>
-                  </div>
-                  <div className="water-progress-track">
-                    <div
-                      className="water-progress-fill"
-                      style={{ width: `${Math.min(100, planResult.water.allocation_pct)}%` }}
-                    />
-                  </div>
-                </div>
-              )}
-
-              <h3>Simulated Source Breakdown (Sample Reference)</h3>
-              <div className="data-table-container">
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th>Source Type</th>
-                      <th>Share</th>
-                      <th>Estimated Quota</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td><strong>Canal Entitlement</strong></td>
-                      <td>60%</td>
-                      <td>
-                        {farmData
-                          ? `${Math.round(farmData.availableWaterM3 * 0.6).toLocaleString()} m³`
-                          : "1,800 m³"}
-                      </td>
-                      <td>Permissible</td>
-                    </tr>
-                    <tr>
-                      <td><strong>Borewell / Aquifer Reserve</strong></td>
-                      <td>40%</td>
-                      <td>
-                        {farmData
-                          ? `${Math.round(farmData.availableWaterM3 * 0.4).toLocaleString()} m³`
-                          : "1,200 m³"}
-                      </td>
-                      <td>Permissible</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              <p className="sample-notice">
-                <strong>Disclaimer:</strong> Source breakdown is illustrative based on standard regional canal and aquifer models.
-              </p>
-            </section>
-          </div>
+          <WaterOptimization
+            planResult={planResult}
+            farmData={isDemoActive ? defaultBaselineFarm : farmData}
+            userSavedFarmData={farmData}
+            isDemonstrationPlan={isDemoActive}
+            loadingPlan={loadingPlan}
+            planError={planError}
+            onRecalculate={(data) => {
+              if (isDemoActive) {
+                handleGenerateBaselineDemo();
+              } else {
+                handleGeneratePlan(data || farmData);
+              }
+            }}
+            onEvaluatePlan={(data) => handleGeneratePlan(data || farmData)}
+            onGenerateDemo={() => handleGenerateBaselineDemo()}
+            onSwitchToRealPlan={() => handleSwitchToRealPlan()}
+            onNavigate={handleNavigate}
+          />
         )}
 
         {plannerSubTab === "market" && (
@@ -632,65 +676,12 @@ function App() {
 
       case "Settings":
         return (
-          <div className="page-content">
-            <div className="page-header">
-              <div>
-                <p className="breadcrumb">Workspace / Settings</p>
-                <h1 className="page-title">Settings</h1>
-                <p className="page-subtitle">
-                  Workspace configuration and ag-district preferences.
-                </p>
-              </div>
-            </div>
-
-            <section className="panel">
-              <div className="panel-heading">
-                <div>
-                  <span className="eyebrow">PREFERENCES</span>
-                  <h2>Workspace configuration</h2>
-                  <p>Standard settings for regional agronomic calculations.</p>
-                </div>
-              </div>
-
-              <div className="settings-list">
-                <div className="setting-item">
-                  <div>
-                    <strong>Unit of Measure</strong>
-                    <span>Cultivation area in acres, water volume in cubic meters (m³)</span>
-                  </div>
-                  <span className="crop-type">Acres / m³</span>
-                </div>
-
-                <div className="setting-item">
-                  <div>
-                    <strong>Agro-Ecological District</strong>
-                    <span>GIS Zone 4B (Semi-Arid Central Plateau)</span>
-                  </div>
-                  <span className="crop-type">Zone 4B</span>
-                </div>
-
-                <div className="setting-item">
-                  <div>
-                    <strong>Theme Mode</strong>
-                    <span>Clean agricultural light palette (#F7F9F6)</span>
-                  </div>
-                  <span className="crop-type">Standard Light</span>
-                </div>
-
-                <div className="setting-item">
-                  <div>
-                    <strong>Data Storage</strong>
-                    <span>Encrypted browser local storage with schema validation</span>
-                  </div>
-                  <span className="crop-type">Browser LocalStorage</span>
-                </div>
-              </div>
-
-              <p className="sample-notice">
-                Application settings are active for this browser profile. Backend user account settings will be enabled when authentication is deployed.
-              </p>
-            </section>
-          </div>
+          <SettingsPage
+            onNavigate={handleNavigate}
+            onFarmReset={handleFarmReset}
+            onNotification={(msg) => setNotification(msg)}
+            onSignOut={handleLogout}
+          />
         );
 
       default:
@@ -724,8 +715,8 @@ function App() {
     );
   }
 
-  // 2. No active session — show auth pages
-  if (!user) {
+  // 2. No active session and not in guest demo mode — show auth pages
+  if (!user && !isGuest) {
     if (authView === "signup")
       return (
         <SignupPage
@@ -738,12 +729,17 @@ function App() {
             }
             setAuthView("login");
           }}
-          onAuthSuccess={() => {
+          onAuthSuccess={(newSession) => {
             try {
               sessionStorage.removeItem("quantum_agri_auth_intent");
             } catch {
               // ignore
             }
+            if (newSession) {
+              setAuthSession?.(newSession);
+            }
+            setAuthView("login");
+            setActivePage("Home");
           }}
           oauthError={authError}
         />
@@ -791,15 +787,58 @@ function App() {
           }
           setAuthView("login");
         }}
+        onContinueAsGuest={() => {
+          try {
+            sessionStorage.setItem("quantum_agri_guest_mode", "true");
+          } catch {
+            // ignore
+          }
+          setIsGuest(true);
+        }}
         oauthError={authError}
       />
     );
   }
 
-  // 3. Authenticated — render full app
+  // 3. Authenticated or Guest — render full app
   async function handleLogout() {
+    try {
+      sessionStorage.removeItem("quantum_agri_guest_mode");
+      sessionStorage.removeItem("quantum_agri_auth_intent");
+    } catch {
+      // ignore
+    }
+    setIsGuest(false);
+    setFarmData(null);
+    setRealPlanResult(null);
+    setDemoPlanResult(null);
+    setIsDemoActive(false);
+    setPlanError(null);
+    setNotification(null);
     await signOut();
     // AuthContext will detect the session change and re-render to auth pages
+  }
+
+  function handleCreateAccountFromGuest() {
+    try {
+      sessionStorage.removeItem("quantum_agri_guest_mode");
+      sessionStorage.setItem("quantum_agri_auth_intent", "signup");
+    } catch {
+      // ignore
+    }
+    setIsGuest(false);
+    setAuthView("signup");
+  }
+
+  function handleSignInFromGuest() {
+    try {
+      sessionStorage.removeItem("quantum_agri_guest_mode");
+      sessionStorage.removeItem("quantum_agri_auth_intent");
+    } catch {
+      // ignore
+    }
+    setIsGuest(false);
+    setAuthView("login");
   }
 
   return (
@@ -822,6 +861,36 @@ function App() {
         />
 
         <main className="main-content">
+          {isGuest && !user && (
+            <div className="guest-mode-banner" role="status" id="guest-mode-banner">
+              <div className="guest-banner-left">
+                <span className="material-symbols-outlined guest-banner-icon" aria-hidden="true">
+                  info
+                </span>
+                <span>
+                  You are viewing a <strong>Guest Demo Workspace</strong>. Save your plans and cloud sync by creating an account.
+                </span>
+              </div>
+              <div className="guest-banner-actions">
+                <button
+                  type="button"
+                  id="guest-create-account-btn"
+                  className="guest-banner-btn-primary"
+                  onClick={handleCreateAccountFromGuest}
+                >
+                  Create Account
+                </button>
+                <button
+                  type="button"
+                  id="guest-sign-in-btn"
+                  className="guest-banner-btn-secondary"
+                  onClick={handleSignInFromGuest}
+                >
+                  Sign In
+                </button>
+              </div>
+            </div>
+          )}
           {notification && (
             <aside className="workspace-notification" role="status">
               <div className="notification-content">
@@ -839,6 +908,21 @@ function App() {
             </aside>
           )}
           {renderPage()}
+
+          {/* Floating Voice Assistant Quick Trigger */}
+          <button
+            type="button"
+            id="floating-voice-launcher-btn"
+            className="floating-voice-launcher-btn"
+            onClick={() => handleNavigate("My Farm")}
+            title="Open Voice Dictation Assistant"
+            aria-label="Open Voice Dictation Assistant"
+          >
+            <span className="material-symbols-outlined" aria-hidden="true">
+              mic
+            </span>
+            <span className="floating-voice-text">Voice Assistant</span>
+          </button>
         </main>
       </div>
     </div>

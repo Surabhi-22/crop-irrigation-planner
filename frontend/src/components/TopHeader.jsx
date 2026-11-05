@@ -56,11 +56,14 @@ const PAGE_METADATA = {
   },
   Settings: {
     title: "Settings & Preferences",
-    subtitle: "Workspace configuration, measurement units, and agro-ecological district parameters.",
+    subtitle: "Manage your profile, farm preferences, account security, and workspace data.",
   },
 };
 
+import { useLanguage } from "../context/LanguageContext";
+
 export default function TopHeader({ activePage, farmData, onNavigate }) {
+  const { language, setLanguage, supportedLanguages } = useLanguage();
   const meta = PAGE_METADATA[activePage] || {
     title: activePage,
     subtitle: "Quantum Agri workspace.",
@@ -111,6 +114,40 @@ export default function TopHeader({ activePage, farmData, onNavigate }) {
             </div>
           </div>
         )}
+
+        {/* Global Multilingual Selector */}
+        <div className="header-language-picker" title="Change voice & interface language">
+          <span className="material-symbols-outlined header-lang-icon" aria-hidden="true">
+            translate
+          </span>
+          <select
+            id="global-language-selector"
+            className="header-language-select"
+            value={language}
+            onChange={(e) => setLanguage(e.target.value)}
+            aria-label="Select application and voice assistant language"
+          >
+            {supportedLanguages.map((lang) => (
+              <option key={lang.code} value={lang.code}>
+                {lang.nativeLabel} ({lang.code.split("-")[0].toUpperCase()})
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Voice Assistant Quick Action */}
+        <button
+          type="button"
+          id="header-voice-btn"
+          className="header-voice-btn"
+          onClick={() => onNavigate("My Farm")}
+          title="Open Voice Dictation Assistant"
+        >
+          <span className="material-symbols-outlined" aria-hidden="true">
+            mic
+          </span>
+          <span>Voice Dictate</span>
+        </button>
 
         {/* Primary Action Button */}
         <button

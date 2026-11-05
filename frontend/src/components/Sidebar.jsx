@@ -8,7 +8,8 @@
 const navigationItems = [
   { label: "Home", icon: "home", aliases: ["Overview", "Dashboard"] },
   { label: "My Farm", icon: "agriculture", aliases: ["Farm Details"] },
-  { label: "Crop Planner", icon: "psychiatry", aliases: ["Crop Recommendations", "Water Optimization", "Market Insights", "Scenario Lab"] },
+  { label: "Crop Planner", icon: "psychiatry", aliases: ["Crop Recommendations"] },
+  { label: "Water Optimization", icon: "water_drop", aliases: ["Water Planning"] },
   { label: "My Plans", icon: "inventory_2", aliases: ["Planning History"] },
   { label: "Settings", icon: "settings", aliases: [] },
 ];

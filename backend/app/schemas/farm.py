@@ -1,3 +1,4 @@
+from typing import Optional
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -41,10 +42,14 @@ class FarmInput(BaseModel):
         description="Agricultural cultivation season (e.g., Kharif, Rabi, Summer).",
         examples=["Kharif"],
     )
-    budget_inr: float = Field(
+    budget_inr: Optional[float] = Field(
         ...,
         ge=0,
-        description="Available operational working capital in Indian Rupees (INR). Must be non-negative.",
+        description=(
+            "Available operational working capital in Indian Rupees (INR). "
+            "null represents an unconstrained budget; 0 represents zero operational capital; "
+            "positive numbers represent actual working budget limits."
+        ),
         examples=[100000.0],
     )
 

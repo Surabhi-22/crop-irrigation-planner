@@ -62,14 +62,25 @@ def test_generate_plan_success(client):
     assert isinstance(data["planning_notes"], list)
 
 
-def test_generate_plan_zero_budget_unconstrained(client):
-    """Budget = 0 means unconstrained budget; planning should still succeed."""
-    payload = {**VALID_PLAN_PAYLOAD, "budget_inr": 0.0}
+def test_generate_plan_null_budget_unconstrained(client):
+    """budget_inr = None means unconstrained budget; planning succeeds for full farm capacity."""
+    payload = {**VALID_PLAN_PAYLOAD, "budget_inr": None}
     response = client.post("/api/v1/plan/generate", json=payload)
     assert response.status_code == 200
     data = response.json()
     assert data["feasible"] is True
-    assert any("budget" in note.lower() for note in data["planning_notes"])
+    assert any("unconstrained" in note.lower() for note in data["planning_notes"])
+
+
+def test_generate_plan_zero_budget_indicates_zero_capital(client):
+    """budget_inr = 0.0 indicates zero operational capital and returns 422 with actionable guidance."""
+    payload = {**VALID_PLAN_PAYLOAD, "budget_inr": 0.0}
+    response = client.post("/api/v1/plan/generate", json=payload)
+    assert response.status_code == 422
+    data = response.json()
+    assert data["detail"]["error"] == "infeasible_plan"
+    assert "zero" in data["detail"]["message"].lower() or "budget" in data["detail"]["message"].lower()
+    assert len(data["detail"]["suggestions"]) > 0
 
 
 def test_generate_plan_infeasible_low_budget(client):

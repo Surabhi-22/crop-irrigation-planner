@@ -16,6 +16,7 @@ const AuthContext = createContext({
   loading: true,
   authError: null,
   clearAuthError: () => {},
+  setAuthSession: () => {},
 });
 
 export function AuthProvider({ children }) {
@@ -48,6 +49,14 @@ export function AuthProvider({ children }) {
 
   const clearAuthError = useCallback(() => {
     setAuthError(null);
+  }, []);
+
+  const setAuthSession = useCallback((newSession) => {
+    if (newSession) {
+      setSession(newSession);
+      setAuthError(null);
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -144,6 +153,7 @@ export function AuthProvider({ children }) {
         loading,
         authError,
         clearAuthError,
+        setAuthSession,
       }}
     >
       {children}

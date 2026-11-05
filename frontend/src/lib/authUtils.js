@@ -108,7 +108,10 @@ export function classifySignupResult(response) {
   if (error) {
     const isDuplicate =
       error.message?.toLowerCase().includes("already registered") ||
-      error.code === "user_already_exists";
+      error.message?.toLowerCase().includes("already exists") ||
+      error.message?.toLowerCase().includes("already been registered") ||
+      error.code === "user_already_exists" ||
+      error.code === "email_exists";
 
     if (isDuplicate) {
       return {
@@ -174,5 +177,227 @@ export function classifySignupResult(response) {
   return {
     status: "error",
     message: "Signup could not be completed. Please try again or sign in.",
+  };
+}
+
+/**
+ * Normalizes and validates an Indian mobile number to E.164 format (+91XXXXXXXXXX).
+ * Accepts formats:
+ *   - 10 digits: "9876543210" -> "+919876543210"
+ *   - With 0 prefix: "09876543210" -> "+919876543210"
+ *   - With 91 prefix: "919876543210" -> "+919876543210"
+ *   - With +91 prefix: "+919876543210" -> "+919876543210"
+ *   - With whitespace or hyphens: "+91 98765-43210" -> "+919876543210"
+ *
+ * @param {string} rawPhone
+ * @returns {{ isValid: boolean, normalized: string, error: string | null }}
+ */
+export function normalizeIndianPhoneNumber(rawPhone = "") {
+  if (!rawPhone || typeof rawPhone !== "string") {
+    return {
+      isValid: false,
+      normalized: "",
+      error: "Phone number is required.",
+    };
+  }
+
+  // Remove whitespace, hyphens, parentheses, dots
+  let cleaned = rawPhone.trim().replace(/[\s\-().]/g, "");
+
+  if (!cleaned) {
+    return {
+      isValid: false,
+      normalized: "",
+      error: "Phone number is required.",
+    };
+  }
+
+  // If starts with '+', keep '+' and strip non-digits after it
+  if (cleaned.startsWith("+")) {
+    cleaned = "+" + cleaned.slice(1).replace(/\D/g, "");
+  } else {
+    cleaned = cleaned.replace(/\D/g, "");
+  }
+
+  let nationalDigits;
+
+  if (cleaned.startsWith("+91")) {
+    nationalDigits = cleaned.slice(3);
+  } else if (cleaned.startsWith("91") && cleaned.length === 12) {
+    nationalDigits = cleaned.slice(2);
+  } else if (cleaned.startsWith("0") && cleaned.length === 11) {
+    nationalDigits = cleaned.slice(1);
+  } else if (/^\d{10}$/.test(cleaned)) {
+    nationalDigits = cleaned;
+  } else {
+    return {
+      isValid: false,
+      normalized: "",
+      error: "Enter a valid 10-digit Indian mobile number.",
+    };
+  }
+
+  // Validate length is exactly 10 digits
+  if (nationalDigits.length !== 10) {
+    return {
+      isValid: false,
+      normalized: "",
+      error: "Indian mobile number must be exactly 10 digits.",
+    };
+  }
+
+  // Indian mobile numbers start with 6, 7, 8, or 9
+  if (!/^[6-9]/.test(nationalDigits)) {
+    return {
+      isValid: false,
+      normalized: "",
+      error: "Indian mobile number must begin with 6, 7, 8, or 9.",
+    };
+  }
+
+  return {
+    isValid: true,
+    normalized: `+91${nationalDigits}`,
+    error: null,
+  };
+}
+
+/**
+ * Validates a 6-digit OTP code string.
+ *
+ * @param {string} token
+ * @returns {{ isValid: boolean, error: string | null }}
+ */
+export function validateOtpInput(token = "") {
+  const clean = typeof token === "string" ? token.trim() : "";
+  if (!clean) {
+    return { isValid: false, error: "Please enter the 6-digit OTP." };
+  }
+  if (!/^\d{6}$/.test(clean)) {
+    return { isValid: false, error: "OTP must be exactly 6 digits." };
+  }
+  return { isValid: true, error: null };
+}
+
+/**
+ * Classifies the response from supabase.auth.signInWithOtp({ phone }).
+ *
+ * @param {{ data?: object | null, error?: { message?: string, code?: string, status?: number } | null }} response
+ * @returns {{ status: 'otp_sent' | 'provider_disabled' | 'rate_limited' | 'invalid_phone' | 'error', message: string }}
+ */
+export function classifyOtpRequestResult(response) {
+  if (!response) {
+    return {
+      status: "error",
+      message: "Unable to process OTP request. Please try again.",
+    };
+  }
+
+  const { error } = response;
+  if (error) {
+    const msg = (error.message || "").toLowerCase();
+    const code = error.code || "";
+
+    if (
+      code === "phone_provider_disabled" ||
+      msg.includes("unsupported phone provider") ||
+      msg.includes("phone provider is disabled")
+    ) {
+      return {
+        status: "provider_disabled",
+        message:
+          "SMS service is not enabled on this Supabase project. A phone provider (such as Twilio) must be configured in the Supabase Dashboard under Authentication > Providers > Phone.",
+      };
+    }
+
+    if (
+      code === "over_sms_send_rate_limit" ||
+      error.status === 429 ||
+      msg.includes("rate limit")
+    ) {
+      return {
+        status: "rate_limited",
+        message: "SMS request limit reached. Please wait a short while before trying again.",
+      };
+    }
+
+    if (
+      code === "phone_number_invalid" ||
+      msg.includes("invalid phone") ||
+      msg.includes("bad phone number")
+    ) {
+      return {
+        status: "invalid_phone",
+        message: "The phone number is invalid. Please check and try again.",
+      };
+    }
+
+    return {
+      status: "error",
+      message: error.message || "Failed to send OTP. Please check your network and try again.",
+    };
+  }
+
+  return {
+    status: "otp_sent",
+    message: "OTP sent successfully! Please check your mobile phone.",
+  };
+}
+
+/**
+ * Classifies the response from supabase.auth.verifyOtp({ phone, token, type: 'sms' }).
+ *
+ * @param {{ data?: { session?: object, user?: object } | null, error?: { message?: string, code?: string, status?: number } | null }} response
+ * @returns {{ status: 'success_session' | 'invalid_otp' | 'rate_limited' | 'error', message?: string, session?: object, user?: object }}
+ */
+export function classifyOtpVerifyResult(response) {
+  if (!response) {
+    return {
+      status: "error",
+      message: "Unable to verify OTP. Please try again.",
+    };
+  }
+
+  const { data, error } = response;
+  if (error) {
+    const msg = (error.message || "").toLowerCase();
+    const code = error.code || "";
+
+    if (
+      code === "otp_expired" ||
+      msg.includes("expired") ||
+      msg.includes("invalid") ||
+      msg.includes("token has expired")
+    ) {
+      return {
+        status: "invalid_otp",
+        message: "Incorrect or expired OTP code. Please enter the code received or request a new one.",
+      };
+    }
+
+    if (error.status === 429 || msg.includes("rate limit") || msg.includes("too many requests")) {
+      return {
+        status: "rate_limited",
+        message: "Too many verification attempts. Please wait a moment before trying again.",
+      };
+    }
+
+    return {
+      status: "error",
+      message: error.message || "Verification failed. Please try again.",
+    };
+  }
+
+  if (data?.session) {
+    return {
+      status: "success_session",
+      session: data.session,
+      user: data.user,
+    };
+  }
+
+  return {
+    status: "error",
+    message: "Authentication could not be established. Please try again.",
   };
 }

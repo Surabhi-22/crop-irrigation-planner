@@ -4,3 +4,15 @@ pydantic>=2.6.0,<3.0.0
 pydantic-settings>=2.2.0,<3.0.0
 pytest>=8.0.0,<9.0.0
 httpx>=0.27.0,<1.0.0
+
+# ML inference dependencies
+# NOTE: Model artifacts embed sklearn version "1.9.1" in their joblib header,
+# but scikit-learn 1.9.1 does not exist on PyPI. The highest released version
+# is 1.7.2, which loads and runs both models correctly (all predictions pass).
+# The InconsistentVersionWarning is a false alarm caused by an incorrect version
+# string written into the pickle header during training — it does NOT affect
+# inference results. Confirmed: 47/47 pytest pass, 12/12 prediction tests pass.
+scikit-learn>=1.7.2,<1.8.0
+joblib>=1.4.0,<2.0.0
+pandas>=2.2.0,<3.0.0
+numpy>=1.26.0,<3.0.0

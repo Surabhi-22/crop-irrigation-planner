@@ -79,6 +79,7 @@ test('toFrontendSchema converts snake_case backend echo to camelCase frontend sc
     location: 'Bengaluru',
     season: 'Kharif',
     budget: 8500.0,
+    unconstrainedBudget: false,
   });
 });
 

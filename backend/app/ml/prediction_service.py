@@ -10,8 +10,12 @@ import math
 import re
 from typing import Dict, Any, Optional, List
 
-from ml.yield_prediction import predict_yield, SUPPORTED_DISTRICTS, SUPPORTED_CROPS, DISTRICT_MAPPING
-from ml.price_prediction import predict_price, PRICE_COMMODITIES, COMMODITIES_WITH_MIXED_UNITS
+try:
+    from .yield_prediction import predict_yield, SUPPORTED_DISTRICTS, SUPPORTED_CROPS, DISTRICT_MAPPING
+    from .price_prediction import predict_price, PRICE_COMMODITIES, COMMODITIES_WITH_MIXED_UNITS
+except ImportError:
+    from ml.yield_prediction import predict_yield, SUPPORTED_DISTRICTS, SUPPORTED_CROPS, DISTRICT_MAPPING
+    from ml.price_prediction import predict_price, PRICE_COMMODITIES, COMMODITIES_WITH_MIXED_UNITS
 
 # Unified crop cross-model lookup
 # Maps common crop names to their respective model identities
